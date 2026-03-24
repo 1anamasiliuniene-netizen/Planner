@@ -1,0 +1,117 @@
+{% extends "planner/base.html" %}
+{% load crispy_forms_tags static %}
+
+{% block title %}{% if is_create_mode %}Create Workspace{% else %}Workspace: {{ workspace.name }}{% endif %}{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">{% if is_create_mode %}Create Workspace{% else %}Workspace: {{ workspace.name }}{% endif %}</h2>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4 shadow-sm rounded-4 p-3">
+            <h5>{% if is_create_mode %}New Workspace{% else %}Edit Workspace{% endif %}</h5>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ workspace_form|crispy }}
+                <button type="submit" name="workspace_submit" class="btn btn-primary mt-2">
+                    {% if is_create_mode %}Create Workspace{% else %}Save Workspace{% endif %}
+                </button>
+            </form>
+        </div>
+
+        {% if not is_create_mode %}
+        <div class="mb-4">
+            <h5>Projects</h5>
+            <ul class="list-group mb-2">
+                {% for project in projects %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ project.name }}
+                    <a href="{% url 'project_detail' project.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted">No projects yet.</li>
+                {% endfor %}
+            </ul>
+
+            <div class="card p-3 shadow-sm rounded-4">
+                <h6>Add New Project</h6>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ project_form|crispy }}
+                    <button type="submit" name="project_submit" class="btn btn-success mt-2">Add Project</button>
+                </form>
+            </div>
+        </div>
+
+        <div>
+            <h5>Tasks</h5>
+            <ul class="list-group mb-2">
+                {% for task in tasks %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ task.title }}
+                    <a href="{% url 'task_update' task.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted">No tasks yet.</li>
+                {% endfor %}
+            </ul>
+
+            <div class="card p-3 shadow-sm rounded-4">
+                <h6>Add New Task</h6>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ task_form|crispy }}
+                    <button type="submit" name="task_submit" class="btn btn-success mt-2">Add Task</button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">After creating a workspace you can add projects and tasks here.</div>
+        {% endif %}
+
+    </div>
+
+    <div class="col-lg-4">
+        {% if not is_create_mode %}
+        <h5>Reminders</h5>
+        {% for reminder in workspace.reminder_set.all %}
+            <div class="card mb-2 p-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>{% if reminder.task %}{{ reminder.task.title }}{% elif reminder.event %}{{ reminder.event.title }}{% else %}Reminder{% endif %}</span>
+                    {% if reminder.is_resolved %}
+                        <span class="badge bg-success">Done</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-muted">No reminders.</p>
+        {% endfor %}
+
+        <h5 class="mt-4">Notes</h5>
+        {% for note in workspace.note_set.all %}
+            <div class="card mb-2 p-2">
+                <strong>{{ note.title }}</strong>
+                <p class="small">{{ note.content|truncatewords:15 }}</p>
+            </div>
+        {% empty %}
+            <p class="text-muted">No notes.</p>
+        {% endfor %}
+        {% else %}
+        <h5>Your Workspaces</h5>
+        <ul class="list-group mb-2">
+            {% for ws in workspaces %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ ws.name }}
+                <a href="{% url 'workspace_detail' ws.pk %}" class="btn btn-sm btn-outline-secondary">Open</a>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-muted">No workspaces yet.</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "planner/base.html" %}
+
+{% block title %}Notes{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Notes</h2>
+        <button type="button" class="btn btn-primary" disabled title="Create Note will be added next">
+            + Create Note
+        </button>
+    </div>
+
+    <div class="alert alert-light border text-muted mb-0" role="alert">
+        No notes yet.
+    </div>
+</div>
+{% endblock %}

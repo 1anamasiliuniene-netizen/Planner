@@ -1,0 +1,105 @@
+{% extends "planner/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}My Tasks{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h2 class="mb-4 text-center">My Tasks</h2>
+
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Optional: keep or remove depending on your UX decision -->
+    <div class="d-flex justify-content-end gap-2 mb-3">
+        <a href="{% url 'project_create' %}" class="btn btn-outline-primary">+ New Project</a>
+        <a href="{% url 'task_create' %}" class="btn btn-success">+ New Task</a>
+    </div>
+
+    {% for workspace, projects in grouped_tasks.items %}
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <strong>{{ workspace.name }}</strong> ({{ workspace.get_type_display }})
+            </div>
+
+            <div class="card-body">
+                {% for project, tasks in projects.items %}
+                    <h5 class="mt-2">
+                        {% if project %}
+                            <a href="{% url 'project_detail' project.pk %}" class="text-decoration-none">
+                                {{ project.name }}
+                            </a>
+                        {% else %}
+                            No Project
+                        {% endif %}
+                    </h5>
+
+                    <ul class="list-group mb-3">
+                        {% for task in tasks %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+
+                                <!-- LEFT: checkbox + title -->
+                                <div class="d-flex align-items-center gap-2">
+
+                                    <!-- Toggle -->
+                                    <form method="post" action="{% url 'task_toggle' task.pk %}">
+                                        {% csrf_token %}
+                                        <input
+                                            type="checkbox"
+                                            onchange="this.form.submit()"
+                                            {% if task.is_completed %}checked{% endif %}
+                                            class="form-check-input"
+                                        />
+                                    </form>
+
+                                    <!-- Title -->
+                                    <span class="{% if task.is_completed %}text-decoration-line-through text-muted{% endif %}">
+                                        {{ task.title }}
+                                    </span>
+
+                                    {% if task.due_date %}
+                                        <small class="text-muted ms-2">
+                                            Due: {{ task.due_date|date:"M d, Y H:i" }}
+                                        </small>
+                                    {% endif %}
+                                </div>
+
+                                <!-- RIGHT: actions -->
+                                <div class="d-flex gap-2">
+
+                                    <!-- Go to nested edit -->
+                                    <a href="{% url 'task_detail' task.pk %}" class="btn btn-primary btn-sm">
+                                        Open
+                                    </a>
+
+                                    <!-- Delete (FIXED: POST) -->
+                                    <form method="post" action="{% url 'task_delete' task.pk %}">
+                                        {% csrf_token %}
+                                        <button class="btn btn-danger btn-sm"
+                                                onclick="return confirm('Delete this task?')">
+                                            Delete
+                                        </button>
+                                    </form>
+
+                                </div>
+
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endfor %}
+            </div>
+        </div>
+    {% empty %}
+        <p class="text-center text-muted">
+            No tasks yet. Create your first project and task.
+        </p>
+    {% endfor %}
+</div>
+{% endblock %}
