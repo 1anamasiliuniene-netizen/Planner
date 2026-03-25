@@ -26,6 +26,9 @@ INSTALLED_APPS = [
     'planner',
     'crispy_forms',
     'crispy_bootstrap5',
+    'rest_framework',
+    'drf_spectacular',
+    'django_filters',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -124,6 +127,96 @@ DEFAULT_FROM_EMAIL = 'no-reply@planner.local'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-from datetime import timedelta
 
 PASSWORD_RESET_TIMEOUT = 3600  # 1 hour
+
+
+# ========================
+# Django REST Framework Settings
+# ========================
+REST_FRAMEWORK = {
+    # Default authentication for API
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    # Default permission classes
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    # Pagination
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 50,
+    # Filtering and searching
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    # Schema generation (drf-spectacular)
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # Default renderer classes
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
+    # Datetime format
+    'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S',
+    # Exception handler
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+}
+
+# ========================
+# drf-spectacular Configuration
+# ========================
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Planner REST API',
+    'DESCRIPTION': 'Complete REST API for Task Planner application with workspaces, projects, tasks, events, reminders, and notes.',
+    'VERSION': '1.0.0',
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],
+    'SERVE_INCLUDE_SCHEMA': True,
+    'SCHEMA_PATH_PREFIX': '/api',
+    'SCHEMA_MOUNT_PATH': '/api/schema/',
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorizationData': True,
+        'displayOperationId': True,
+    },
+    'SERVERS': [
+        {
+            'url': 'http://localhost:8001',
+            'description': 'Development server',
+        },
+    ],
+    'TAGS': [
+        {
+            'name': 'Workspaces',
+            'description': 'Workspace management endpoints',
+        },
+        {
+            'name': 'Projects',
+            'description': 'Project management endpoints',
+        },
+        {
+            'name': 'Tasks',
+            'description': 'Task management endpoints',
+        },
+        {
+            'name': 'Events',
+            'description': 'Event management endpoints',
+        },
+        {
+            'name': 'Reminders',
+            'description': 'Reminder management endpoints',
+        },
+        {
+            'name': 'Notes',
+            'description': 'Note management endpoints',
+        },
+        {
+            'name': 'QuickNotes',
+            'description': 'Quick note management endpoints',
+        },
+    ],
+    'POSTPROCESSING_HOOKS': [],
+}
+

@@ -4,7 +4,7 @@ Registers all viewsets and provides API documentation.
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework.documentation import include_docs_urls
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from .viewsets import (
     WorkspaceViewSet, ProjectViewSet, TaskViewSet,
@@ -29,11 +29,8 @@ urlpatterns = [
     # API Authentication
     path('api/auth/', include('rest_framework.urls')),
 
-    # API Documentation
-    path('api/docs/', include_docs_urls(
-        title='Planner API',
-        description='REST API for Task Planner application',
-        version='1.0.0'
-    )),
+    # API Schema and Documentation (using drf-spectacular)
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]
 
