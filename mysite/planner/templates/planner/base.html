@@ -14,7 +14,7 @@
 </head>
 <body>
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
     <div class="container">
         <a class="navbar-brand" href="{% url 'dashboard' %}">My Planner</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -30,24 +30,37 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'task_list' %}active{% endif %}"
-                       href="{% url 'task_list' %}">Tasks</a>
+                       href="{% url 'task_list' %}">My projects</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'event_list' %}active{% endif %}"
                        href="{% url 'event_list' %}">Calendar</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'note_list' %}active{% endif %}"
-                       href="{% url 'note_list' %}">Notes</a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'quicknote_list' or request.resolver_match.url_name == 'quicknote_create' or request.resolver_match.url_name == 'quicknote_detail' or request.resolver_match.url_name == 'quicknote_update' or request.resolver_match.url_name == 'quicknote_delete' %}active{% endif %}"
+                       href="{% url 'quicknote_list' %}">My memos</a>
                 </li>
             </ul>
+
+            <!-- Search -->
+            <form class="d-flex me-2" method="get" action="{% url 'search' %}" role="search">
+                <div class="input-group input-group-sm">
+                    <input class="form-control" type="search" name="q"
+                           placeholder="Search projects & tasks…"
+                           value="{{ request.GET.q }}"
+                           aria-label="Search">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </form>
 
             <!-- User menu -->
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                 {% if user.is_authenticated %}
                 <li class="nav-item dropdown me-2">
                     <a class="nav-link position-relative" href="#" id="reminderMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Reminders">
-                        <i class="bi bi-bell-fill text-danger" aria-hidden="true"></i>
+                        <i class="bi bi-bell-fill text-dark" aria-hidden="true"></i>
                         {% if navbar_reminder_count %}
                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                             {{ navbar_reminder_count }}
@@ -78,7 +91,7 @@
                     </ul>
                 </li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle text-white" href="#" id="userMenu" role="button"
+                    <a class="nav-link dropdown-toggle text-dark" href="#" id="userMenu" role="button"
                        data-bs-toggle="dropdown">
                         Hello, {{ user.username }}
                     </a>
@@ -99,14 +112,30 @@
     </div>
 </nav>
 
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'planner/css/dashboard.css' %}">
+{% endblock %}
+
 <!-- Main container -->
 <div class="container">
+
+    {% if is_demo %}
+    <div class="alert alert-warning alert-dismissible d-flex align-items-center gap-3 mb-4 rounded-4" role="alert">
+        <i class="bi bi-eye fs-5"></i>
+        <div>
+            <strong>Demo mode.</strong> You are browsing a read-only showcase account.
+            <a href="{% url 'signup' %}" class="alert-link">Sign up free</a> to create your own workspace.
+        </div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
     {% block content %}{% endblock %}
 </div>
 
 <!-- Footer -->
 <footer class="bg-light text-center py-3 mt-4 border-top">
-    <small>&copy; 2026 Ana's Planner</small>
+    <small>&copy; 2026 My Planner</small>
 </footer>
 
 <!-- Bootstrap JS -->

@@ -1,105 +1,74 @@
 {% extends "planner/base.html" %}
+{% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}My Tasks{% endblock %}
+{% block title %}My Projects{% endblock %}
 
 {% block content %}
 <div class="container my-5">
-    <h2 class="mb-4 text-center">My Tasks</h2>
+    <h2 class="mb-4 text-center">
+        <i class="bi bi-folder"></i> My Projects
+    </h2>
 
     <!-- Messages -->
     {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        {% endfor %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <i class="bi bi-info-circle"></i> {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
     {% endif %}
 
-    <!-- Optional: keep or remove depending on your UX decision -->
-    <div class="d-flex justify-content-end gap-2 mb-3">
-        <a href="{% url 'project_create' %}" class="btn btn-outline-primary">+ New Project</a>
-        <a href="{% url 'task_create' %}" class="btn btn-success">+ New Task</a>
+    <!-- Actions -->
+    <div class="d-flex justify-content-end gap-2 mb-4">
+        <a href="{% url 'project_create' %}" class="btn btn-success btn-sm">
+            <i class="bi bi-plus-circle"></i> Create Project
+        </a>
     </div>
 
     {% for workspace, projects in grouped_tasks.items %}
-        <div class="card mb-4 shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <strong>{{ workspace.name }}</strong> ({{ workspace.get_type_display }})
-            </div>
+    <div class="mb-5">
+        <h5 class="mb-3">
+            <i class="bi bi-grid-1x2"></i> {{ workspace.name }}
+            <small class="text-muted">({{ workspace.get_type_display }})</small>
+        </h5>
 
-            <div class="card-body">
-                {% for project, tasks in projects.items %}
-                    <h5 class="mt-2">
-                        {% if project %}
-                            <a href="{% url 'project_detail' project.pk %}" class="text-decoration-none">
+        <div class="row g-3">
+            {% for project in projects.keys %}
+            <div class="col-md-6 col-xl-4">
+                <div class="card shadow-sm rounded-4 p-3 h-100 border-secondary">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="fw-semibold">
+                            {% if project %}
+                            <i class="bi bi-folder me-1"></i>
+                            <a href="{% url 'project_detail' project.pk %}" class="text-decoration-none text-dark">
                                 {{ project.name }}
                             </a>
-                        {% else %}
-                            No Project
-                        {% endif %}
-                    </h5>
-
-                    <ul class="list-group mb-3">
-                        {% for task in tasks %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-
-                                <!-- LEFT: checkbox + title -->
-                                <div class="d-flex align-items-center gap-2">
-
-                                    <!-- Toggle -->
-                                    <form method="post" action="{% url 'task_toggle' task.pk %}">
-                                        {% csrf_token %}
-                                        <input
-                                            type="checkbox"
-                                            onchange="this.form.submit()"
-                                            {% if task.is_completed %}checked{% endif %}
-                                            class="form-check-input"
-                                        />
-                                    </form>
-
-                                    <!-- Title -->
-                                    <span class="{% if task.is_completed %}text-decoration-line-through text-muted{% endif %}">
-                                        {{ task.title }}
-                                    </span>
-
-                                    {% if task.due_datetime %}
-                                        <small class="text-muted ms-2">
-                                            Due: {{ task.due_datetime|date:"M d, Y H:i" }}
-                                        </small>
-                                    {% endif %}
-                                </div>
-
-                                <!-- RIGHT: actions -->
-                                <div class="d-flex gap-2">
-
-                                    <!-- Go to nested edit -->
-                                    <a href="{% url 'task_detail' task.pk %}" class="btn btn-primary btn-sm">
-                                        Open
-                                    </a>
-
-                                    <!-- Delete (FIXED: POST) -->
-                                    <form method="post" action="{% url 'task_delete' task.pk %}">
-                                        {% csrf_token %}
-                                        <button class="btn btn-danger btn-sm"
-                                                onclick="return confirm('Delete this task?')">
-                                            Delete
-                                        </button>
-                                    </form>
-
-                                </div>
-
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% endfor %}
+                            {% else %}
+                            <i class="bi bi-folder-x me-1"></i> No Project
+                            {% endif %}
+                        </div>
+                        <span class="badge
+    {% if workspace.name == "Health" %}bg-success
+                        {% elif workspace.name == "Personal" %}bg-primary
+                        {% elif workspace.name == "Work" %}bg-warning
+                        {% elif workspace.name == "Family" %}bg-info
+                        {% else %}bg-secondary
+                        {% endif %}">
+                        {{ projects|length }} Tasks
+                        </span>
+                    </div>
+                    <p class="small text-muted mb-0">Workspace: {{ workspace.name }}</p>
+                </div>
             </div>
+            {% endfor %}
         </div>
+    </div>
     {% empty %}
-        <p class="text-center text-muted">
-            No tasks yet. Create your first project and task.
-        </p>
+    <p class="text-center text-muted">
+        <i class="bi bi-inbox"></i> No projects yet.
+    </p>
     {% endfor %}
 </div>
 {% endblock %}

@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
-from .models import Task, Event, Reminder, Workspace, Project, Note
+from .models import Task, Event, Reminder, Workspace, Project, Note, QuickNote
 from django.contrib.auth.forms import PasswordChangeForm
 
 # -----------------------
@@ -18,7 +18,7 @@ class TaskForm(forms.ModelForm):
             "description",
             "due_datetime",
             "priority",
-            "is_completed",
+            # "is_completed",  # handled via dedicated checkbox in views/templates
         ]
         widgets = {
             "due_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
@@ -88,6 +88,22 @@ class EventForm(forms.ModelForm):
             "start_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "end_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        if user:
+            self.fields["workspace"].queryset = Workspace.objects.filter(membership__user=user).distinct()
+        else:
+            self.fields["workspace"].queryset = Workspace.objects.none()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start = cleaned_data.get("start_time")
+        end = cleaned_data.get("end_time")
+        if start and end and end <= start:
+            self.add_error("end_time", "End time must be after start time.")
+        return cleaned_data
 
 # -----------------------
 # Note Form
@@ -187,3 +203,44 @@ class ProjectForm(forms.ModelForm):
             self.fields["workspace"].queryset = Workspace.objects.filter(members=user)
         else:
             self.fields["workspace"].queryset = Workspace.objects.none()
+
+
+# -----------------------
+# Workspace Share Form
+# -----------------------
+class WorkspaceShareForm(forms.Form):
+    identifier = forms.CharField(
+        label="Username or email",
+        max_length=254,
+        widget=forms.TextInput(attrs={"placeholder": "Enter username or email"}),
+    )
+
+    def clean_identifier(self):
+        value = self.cleaned_data["identifier"].strip()
+        user = (
+            User.objects.filter(username__iexact=value).first()
+            or User.objects.filter(email__iexact=value).first()
+        )
+        if not user:
+            raise forms.ValidationError("No user found with that username or email.")
+        return user
+
+class QuickNoteForm(forms.ModelForm):
+    class Meta:
+        model = QuickNote
+        fields = ['title', 'content', 'image', 'display_type', 'shared_workspace']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Note title'}),
+            'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Write your note here...'}),
+            'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'display_type': forms.Select(attrs={'class': 'form-select form-select-sm'}),
+            'shared_workspace': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            # Only show workspaces user is part of
+            self.fields['shared_workspace'].queryset = Workspace.objects.filter(members=user)
+            self.fields['shared_workspace'].required = False

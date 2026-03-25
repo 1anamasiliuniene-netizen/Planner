@@ -176,20 +176,113 @@ label {
 }
 
 /* ========================
-   DASHBOARD
+   TASKS
 ======================== */
 
-.workspace-img {
-    height: 180px;
-    object-fit: cover;
-    width: 100%;
+.task-card {
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
-.workspace-card {
-    transition: all 0.2s ease;
+.collapse-card {
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
 }
 
-.workspace-card:hover {
-    transform: translateY(-5px) scale(1.01);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+.badge-status {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+}
+
+textarea.form-control-sm {
+    height: 3rem; /* smaller note input */
+    font-size: 0.85rem;
+}
+
+input.form-control-sm {
+    font-size: 0.85rem;
+}
+
+.fc-event {
+    cursor: pointer;
+    font-size: 0.75rem;
+}
+
+/* ========================
+   CALENDAR / EVENTS
+======================== */
+.event-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.event-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+}
+
+.task-done, .event-completed {
+    opacity: 0.6;
+    text-decoration: line-through;
+}
+
+/* Card styling consistent with task_detail */
+.card {
+    border: none;                 /* Remove default border */
+    border-radius: 1rem;          /* Rounded corners like task_detail */
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Subtle shadow */
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Card body padding */
+.card-body {
+    padding: 1rem;
+}
+
+/* Small text for notes and info */
+.card small,
+.text-muted,
+.border .text-muted {
+    font-size: 0.875rem;
+}
+
+/* Buttons inside cards */
+.card .btn {
+    font-size: 0.875rem;
+}
+
+/* Sidebar quick info card */
+.sidebar-card {
+    background-color: #f8f9fa; /* light background */
+}
+
+/* Icons spacing */
+.bi {
+    margin-right: 0.25rem;
+    font-size: 1rem;
+}
+
+/* Small card inside main card (for notes/reminders) */
+.small-card {
+    border-radius: 0.5rem;
+    box-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.05);
+    padding: 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 0.75rem;
+    }
+    .small-card {
+        padding: 0.4rem;
+    }
 }

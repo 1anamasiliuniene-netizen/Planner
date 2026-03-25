@@ -1,0 +1,18 @@
+{% extends "planner/base.html" %}
+{% block title %}Archive Project{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm rounded-4 p-4" style="max-width:480px; margin:auto;">
+    <h4 class="mb-3"><i class="bi bi-archive"></i> Archive Project</h4>
+    <p>Are you sure you want to archive <strong>{{ project.name }}</strong>?</p>
+    <p class="text-muted small">The project and its tasks will be hidden from active views. You can restore it any time from the <a href="{% url 'project_archived_list' %}">Archived Projects</a> page.</p>
+    <form method="post" class="d-flex gap-2 mt-3">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-warning">
+            <i class="bi bi-archive"></i> Archive
+        </button>
+        <a href="{% url 'project_detail' project.pk %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
+

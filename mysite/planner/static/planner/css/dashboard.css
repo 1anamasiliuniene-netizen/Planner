@@ -1,0 +1,31 @@
+ /* Hover effect for workspace cards */
+.workspace-card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+    transition: all 0.2s ease-in-out;
+}
+
+/* Task done styling */
+.task-done {
+    background-color: #f8f9fa;
+}
+
+/* Task card urgent colors */
+.task-card.border-danger {
+    border-left: 4px solid #dc3545;
+}
+.task-card.border-warning {
+    border-left: 4px solid #ffc107;
+}
+
+/* Task icon alignment */
+.task-card i.bi {
+    font-size: 0.9rem;
+}
+
+/* Adjust workspace card height ONLY via image */
+.workspace-img {
+    height: 200px;   /* try 160–180px */
+    object-fit: cover;
+}
+

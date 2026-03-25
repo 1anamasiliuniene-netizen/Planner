@@ -1,0 +1,92 @@
+{% extends "planner/base.html" %}
+{% load static crispy_forms_tags %}
+
+{% block title %}Events{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <a href="{% url 'event_create' %}" class="btn btn-sm btn-success">
+        <i class="bi bi-journal-plus"></i> New Event
+    </a>
+
+    <div class="btn-group" role="group" aria-label="Calendar views">
+        <a href="{% url 'calendar' %}?view=dayGridMonth" class="btn btn-sm btn-outline-primary">Month</a>
+        <a href="{% url 'calendar' %}?view=timeGridWeek" class="btn btn-sm btn-outline-primary">Week</a>
+        <a href="{% url 'calendar' %}?view=timeGridDay" class="btn btn-sm btn-outline-primary">Day</a>
+    </div>
+</div>
+
+<!-- Messages -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<!-- Event List -->
+{% if events %}
+<div class="row g-3">
+    {% for event in events %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm rounded-4 p-3 h-100 d-flex flex-column justify-content-between {% if event.is_new %}border border-3 border-warning{% endif %}">
+
+            <!-- Event Info -->
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="card-title mb-0">{{ event.title }}</h5>
+                    {% if event.is_new %}<span class="badge bg-warning text-dark">NEW</span>{% endif %}
+                </div>
+
+                <p class="text-muted mb-1">
+                    <i class="bi bi-calendar-event"></i>
+                    {{ event.start_time|date:"M d, H:i" }}
+                    {% if event.end_time %} - {{ event.end_time|date:"M d, H:i" }}{% endif %}
+                </p>
+
+                <p class="text-muted mb-1">
+                    <i class="bi bi-kanban"></i> {{ event.workspace.name }}
+                </p>
+
+                {% if event.location %}
+                <p class="text-muted mb-1">
+                    <i class="bi bi-geo-alt"></i> {{ event.location }}
+                </p>
+                {% endif %}
+
+                {% if event.notes %}
+                <p class="text-muted small mb-0">
+                    <i class="bi bi-journal-text"></i> {{ event.notes }}
+                </p>
+                {% endif %}
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex gap-2 mt-3 justify-content-end">
+                <a href="{% url 'event_detail' event.pk %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-eye"></i> View
+                </a>
+
+                <a href="{% url 'event_edit' event.pk %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-pencil"></i> Edit
+                </a>
+
+                <form method="post" action="{% url 'event_delete' event.pk %}" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this event?')">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-muted">No events yet. <a href="{% url 'event_create' %}">Create one</a>.</p>
+{% endif %}
+
+{% endblock %}

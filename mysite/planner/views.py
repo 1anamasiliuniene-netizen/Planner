@@ -5,6 +5,13 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
+from django.utils import timezone
+from django.utils.dateparse import parse_date
+from django.db.models import Q
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+
 from .forms import (
     TaskForm,
     EventForm,
@@ -14,11 +21,13 @@ from .forms import (
     TaskShareForm,
     WorkspaceForm,
     ProjectForm,
+    WorkspaceShareForm,
+    QuickNoteForm
 )
-from .models import Task, Event, Reminder, Workspace, Membership, Project, Note
-from django.db.models import Q
-from django.utils import timezone
-from django.utils.dateparse import parse_date
+from .models import (
+    Event, Reminder, Workspace, Membership, Project, Note,
+    QuickNote, QuickNoteSeen, EventSeen, Task
+)
 
 
 # -----------------------
@@ -38,6 +47,83 @@ def group_tasks_by_workspace_project(tasks):
         grouped[workspace].setdefault(project, [])
         grouped[workspace][project].append(task)
     return grouped
+
+
+DEMO_USERNAME = "demo"
+
+
+def demo_readonly(view_func):
+    """Decorator: block POST mutations when logged in as the demo user."""
+    from functools import wraps
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if request.method == "POST" and getattr(request.user, "username", None) == DEMO_USERNAME:
+            messages.warning(request, "This is a read-only demo account. Sign up to make changes.")
+            return redirect(request.META.get("HTTP_REFERER", "dashboard"))
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+def demo_login(request):
+    """Log any visitor in as the demo user (read-only showcase account)."""
+    from django.contrib.auth.models import User
+    from django.core.management import call_command
+
+    demo_user = User.objects.filter(username=DEMO_USERNAME).first()
+    if not demo_user:
+        # Bootstrap demo data on first access if management command hasn't run yet
+        call_command("create_demo_data")
+        demo_user = User.objects.get(username=DEMO_USERNAME)
+
+    login(request, demo_user)
+    messages.info(request, "You are browsing a demo account. Sign up to create your own workspace.")
+    return redirect("dashboard")
+
+
+@login_required
+def demo_reset(request):
+    """Staff-only: re-seed demo data."""
+    if not (request.user.is_staff or request.user.is_superuser):
+        messages.error(request, "Access denied.")
+        return redirect("dashboard")
+    from django.core.management import call_command
+    call_command("create_demo_data")
+    messages.success(request, "Demo data has been reset.")
+    return redirect("dashboard")
+
+
+@login_required
+def search(request):
+    query = request.GET.get("q", "").strip()
+    projects = []
+    tasks = []
+
+    if query:
+        user_workspaces = Workspace.objects.filter(membership__user=request.user)
+        projects = (
+            Project.objects.filter(
+                workspace__in=user_workspaces,
+                name__icontains=query,
+            )
+            .select_related("workspace")
+            .order_by("workspace__name", "name")
+        )
+        tasks = (
+            Task.objects.filter(
+                workspace__in=user_workspaces,
+            )
+            .filter(
+                Q(title__icontains=query) | Q(description__icontains=query)
+            )
+            .select_related("workspace", "project")
+            .order_by("workspace__name", "project__name", "title")
+        )
+
+    return render(request, "planner/search_results.html", {
+        "query": query,
+        "projects": projects,
+        "tasks": tasks,
+    })
 
 
 # -----------------------
@@ -241,6 +327,9 @@ def project_detail(request, pk):
                 messages.success(request, "Task added to project.")
                 return redirect("project_detail", pk=project.pk)
 
+    # Only show active sibling projects in sidebar
+    other_projects = workspace.projects.filter(is_archived=False).exclude(pk=project.pk)
+
     context = {
         "workspace": workspace,
         "project": project,
@@ -248,8 +337,49 @@ def project_detail(request, pk):
         "tasks": tasks,
         "task_form": task_form,
         "is_create_mode": False,
+        "other_projects": other_projects,
     }
     return render(request, "planner/project_detail.html", context)
+
+
+@login_required
+def project_archive(request, pk):
+    project = get_object_or_404(Project, pk=pk)
+    if not user_in_workspace(project.workspace, request.user):
+        messages.error(request, "Access denied.")
+        return redirect("dashboard")
+    if request.method == "POST":
+        project.is_archived = True
+        project.archived_at = timezone.now()
+        project.save(update_fields=["is_archived", "archived_at"])
+        messages.success(request, f'Project "{project.name}" archived.')
+        return redirect("workspace_detail", pk=project.workspace_id)
+    return render(request, "planner/project_archive_confirm.html", {"project": project})
+
+
+@login_required
+def project_restore(request, pk):
+    project = get_object_or_404(Project, pk=pk)
+    if not user_in_workspace(project.workspace, request.user):
+        messages.error(request, "Access denied.")
+        return redirect("dashboard")
+    if request.method == "POST":
+        project.is_archived = False
+        project.archived_at = None
+        project.save(update_fields=["is_archived", "archived_at"])
+        messages.success(request, f'Project "{project.name}" restored.')
+        return redirect("project_detail", pk=project.pk)
+    return redirect("project_archived_list")
+
+
+@login_required
+def project_archived_list(request):
+    user_workspaces = Workspace.objects.filter(membership__user=request.user)
+    archived = Project.objects.filter(
+        workspace__in=user_workspaces,
+        is_archived=True,
+    ).select_related("workspace").order_by("-archived_at")
+    return render(request, "planner/project_archived_list.html", {"archived_projects": archived})
 
 
 @login_required
@@ -306,13 +436,15 @@ def workspace_detail(request, pk):
         messages.error(request, "Access denied.")
         return redirect("dashboard")
 
-    projects = Project.objects.filter(workspace=workspace)
+    projects = Project.objects.filter(workspace=workspace, is_archived=False)
     tasks = Task.objects.filter(workspace=workspace)
+    memberships = Membership.objects.filter(workspace=workspace).select_related("user")
 
     workspace_form = WorkspaceForm(request.POST or None, request.FILES or None, instance=workspace)
     project_form = ProjectForm(request.POST or None, user=request.user)
     project_form.fields["workspace"].initial = workspace
     task_form = TaskForm(request.POST or None, user=request.user)
+    share_form = WorkspaceShareForm(request.POST or None if "share_submit" in request.POST else None)
 
     if request.method == "POST":
         if "workspace_submit" in request.POST:
@@ -340,6 +472,35 @@ def workspace_detail(request, pk):
                 messages.success(request, "Task added.")
                 return redirect("workspace_detail", pk=workspace.pk)
 
+        elif "share_submit" in request.POST:
+            share_form = WorkspaceShareForm(request.POST)
+            if share_form.is_valid():
+                invited_user = share_form.cleaned_data["identifier"]
+                if invited_user == request.user:
+                    messages.info(request, "You are already a member of this workspace.")
+                else:
+                    _, created = Membership.objects.get_or_create(
+                        workspace=workspace,
+                        user=invited_user,
+                        defaults={"role": "member"},
+                    )
+                    if created:
+                        messages.success(request, f"{invited_user.username} has been added to the workspace.")
+                    else:
+                        messages.info(request, f"{invited_user.username} is already a member.")
+                return redirect("workspace_detail", pk=workspace.pk)
+
+        elif "remove_member" in request.POST:
+            member_id = request.POST.get("member_id")
+            if member_id:
+                member_to_remove = Membership.objects.filter(workspace=workspace, user_id=member_id).first()
+                if member_to_remove and member_to_remove.user != request.user:
+                    member_to_remove.delete()
+                    messages.success(request, "Member removed from workspace.")
+                elif member_to_remove and member_to_remove.user == request.user:
+                    messages.error(request, "You cannot remove yourself.")
+            return redirect("workspace_detail", pk=workspace.pk)
+
     context = {
         "workspace": workspace,
         "workspace_form": workspace_form,
@@ -347,6 +508,8 @@ def workspace_detail(request, pk):
         "project_form": project_form,
         "tasks": tasks,
         "task_form": task_form,
+        "share_form": share_form,
+        "memberships": memberships,
         "is_create_mode": False,
     }
     return render(request, "planner/workspace_detail.html", context)
@@ -435,6 +598,11 @@ def task_detail(request, pk):
             messages.success(request, "Task updated successfully.")
             return redirect("task_detail", pk=task.pk)
 
+    workspace_tasks = Task.objects.filter(
+        workspace=workspace,
+        due_datetime__isnull=False,
+    ).select_related("project")
+
     context = {
         "workspace": workspace,
         "project": project,
@@ -442,6 +610,8 @@ def task_detail(request, pk):
         "sibling_tasks": sibling_tasks,
         "task_form": task_form,
         "is_create_mode": False,
+        "workspace_tasks": workspace_tasks,
+        "now": timezone.now(),
     }
     return render(request, "planner/task_detail.html", context)
 
@@ -532,6 +702,19 @@ def share_task(request, pk):
         form = TaskShareForm(instance=task)
     return render(request, "planner/task_share.html", {"form": form, "task": task})
 
+@csrf_exempt  # required for JSON POST
+def task_update_due(request, pk):
+    if request.method == "POST":
+        task = get_object_or_404(Task, pk=pk)
+        data = json.loads(request.body)
+        due = data.get("due_datetime")
+        if due:
+            task.due_datetime = due
+            task.save()
+            return JsonResponse({"success": True, "due_datetime": task.due_datetime})
+    return JsonResponse({"success": False})
+
+
 def reminder_create_for_task(request, task_id):
     """Create a reminder for a specific task from the quick-add form."""
     task = get_object_or_404(Task, pk=task_id)
@@ -573,14 +756,43 @@ def note_create_for_task(request, task_id):
 # -----------------------
 @login_required
 def event_list(request):
-    events = Event.objects.filter(workspace__membership__user=request.user)
+    events = (
+        Event.objects.filter(workspace__membership__user=request.user)
+        .select_related("workspace")
+        .distinct()
+        .order_by("start_time")
+    )
+
+    seen_map = {
+        s.event_id: s.seen_at
+        for s in EventSeen.objects.filter(user=request.user, event__in=events)
+    }
+    for event in events:
+        last_seen = seen_map.get(event.id)
+        event.is_new = (last_seen is None) or (last_seen < event.created_at)
+
     return render(request, "planner/events.html", {"events": events})
+
+
+@login_required
+def event_detail(request, pk):
+    event = get_object_or_404(Event, pk=pk)
+    if not user_in_workspace(event.workspace, request.user):
+        messages.error(request, "Access denied.")
+        return redirect("event_list")
+
+    EventSeen.objects.update_or_create(
+        event=event,
+        user=request.user,
+        defaults={"seen_at": timezone.now()},
+    )
+    return render(request, "planner/event_detail.html", {"event": event})
 
 
 @login_required
 def event_create(request):
     if request.method == "POST":
-        form = EventForm(request.POST)
+        form = EventForm(request.POST, user=request.user)
         if form.is_valid():
             workspace = form.cleaned_data.get("workspace")
             if not user_in_workspace(workspace, request.user):
@@ -589,10 +801,15 @@ def event_create(request):
             event = form.save(commit=False)
             event.workspace = workspace
             event.save()
+            EventSeen.objects.update_or_create(
+                event=event,
+                user=request.user,
+                defaults={"seen_at": timezone.now()},
+            )
             messages.success(request, "Event created.")
             return redirect("event_list")
     else:
-        form = EventForm()
+        form = EventForm(user=request.user)
     return render(request, "planner/event_form.html", {"form": form})
 
 
@@ -602,15 +819,18 @@ def event_update(request, pk):
     if not user_in_workspace(event.workspace, request.user):
         messages.error(request, "Access denied.")
         return redirect("event_list")
-    if request.method == "POST":
-        form = EventForm(request.POST, instance=event)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Event updated.")
-            return redirect("event_list")
-    else:
-        form = EventForm(instance=event)
-    return render(request, "planner/event_form.html", {"form": form})
+
+    form = EventForm(request.POST or None, instance=event, user=request.user)
+    if form.is_valid():
+        updated_event = form.save()
+        EventSeen.objects.update_or_create(
+            event=updated_event,
+            user=request.user,
+            defaults={"seen_at": timezone.now()},
+        )
+        messages.success(request, "Event updated.")
+        return redirect('event_list')
+    return render(request, 'planner/event_form.html', {'form': form, 'event': event})
 
 
 @login_required
@@ -629,7 +849,7 @@ def event_delete(request, pk):
 # -----------------------
 @login_required
 def reminder_list(request):
-    reminders = Reminder.objects.filter(workspace__membership__user=request.user)
+    reminders = Reminder.objects.filter(task__workspace__membership__user=request.user).distinct()
     return render(request, "planner/reminders.html", {"reminders": reminders})
 
 
@@ -638,13 +858,11 @@ def reminder_create(request):
     if request.method == "POST":
         form = ReminderForm(request.POST)
         if form.is_valid():
-            workspace = form.cleaned_data.get("workspace")
-            if not user_in_workspace(workspace, request.user):
+            task = form.cleaned_data.get("task")
+            if task and not user_in_workspace(task.workspace, request.user):
                 messages.error(request, "Invalid workspace.")
                 return redirect("reminder_list")
-            reminder = form.save(commit=False)
-            reminder.workspace = workspace
-            reminder.save()
+            reminder = form.save()
             messages.success(request, "Reminder created.")
             return redirect("reminder_list")
     else:
@@ -655,7 +873,7 @@ def reminder_create(request):
 @login_required
 def reminder_update(request, pk):
     reminder = get_object_or_404(Reminder, pk=pk)
-    if not user_in_workspace(reminder.workspace, request.user):
+    if reminder.task and not user_in_workspace(reminder.task.workspace, request.user):
         messages.error(request, "Access denied.")
         return redirect("reminder_list")
     if request.method == "POST":
@@ -672,12 +890,13 @@ def reminder_update(request, pk):
 @login_required
 def reminder_delete(request, pk):
     reminder = get_object_or_404(Reminder, pk=pk)
-    if user_in_workspace(reminder.workspace, request.user):
+    if reminder.task and user_in_workspace(reminder.task.workspace, request.user):
         if request.method == "POST":
             reminder.delete()
             messages.success(request, "Reminder deleted.")
             return redirect("reminder_list")
     return render(request, "planner/reminder_confirm_delete.html", {"reminder": reminder})
+
 
 def reminder_resolve(request, reminder_id):
     reminder = get_object_or_404(Reminder, pk=reminder_id)
@@ -687,7 +906,103 @@ def reminder_resolve(request, reminder_id):
 
 
 @login_required
-def note_list(request):
-    """Minimal placeholder for notes."""
-    notes = []
-    return render(request, "planner/notes.html", {"notes": notes})
+def calendar_view(request):
+    events = (
+        Event.objects.filter(workspace__membership__user=request.user)
+        .select_related("workspace")
+        .distinct()
+        .order_by('start_time')
+    )
+
+    seen_map = {
+        s.event_id: s.seen_at
+        for s in EventSeen.objects.filter(user=request.user, event__in=events)
+    }
+    for event in events:
+        last_seen = seen_map.get(event.id)
+        event.is_new = (last_seen is None) or (last_seen < event.created_at)
+
+    allowed_views = {"dayGridMonth", "timeGridWeek", "timeGridDay"}
+    requested_view = request.GET.get("view", "dayGridMonth")
+    initial_view = requested_view if requested_view in allowed_views else "dayGridMonth"
+
+    return render(request, 'planner/calendar.html', {
+        'events': events,
+        'initial_view': initial_view,
+    })
+
+@login_required
+def quicknote_list(request):
+    notes = QuickNote.objects.filter(
+        Q(user=request.user) | Q(shared_workspace__members=request.user)
+    ).distinct().select_related('shared_workspace', 'user')
+
+    seen_map = {
+        s.note_id: s.seen_at
+        for s in QuickNoteSeen.objects.filter(user=request.user, note__in=notes)
+    }
+    for note in notes:
+        last_seen = seen_map.get(note.id)
+        note.is_new = (last_seen is None) or (last_seen < note.updated_at)
+
+    return render(request, 'planner/quicknote_list.html', {'notes': notes})
+
+
+@login_required
+def quicknote_detail(request, pk):
+    note = get_object_or_404(QuickNote, pk=pk)
+    if note.user != request.user and (not note.shared_workspace or request.user not in note.shared_workspace.members.all()):
+        return redirect('quicknote_list')
+
+    QuickNoteSeen.objects.update_or_create(
+        note=note,
+        user=request.user,
+        defaults={'seen_at': timezone.now()},
+    )
+    return render(request, 'planner/quicknote_detail.html', {'note': note})
+
+
+@login_required
+def quicknote_create(request):
+    if request.method == 'POST':
+        form = QuickNoteForm(request.POST, request.FILES, user=request.user)
+        if form.is_valid():
+            note = form.save(commit=False)
+            note.user = request.user
+            note.save()
+            QuickNoteSeen.objects.update_or_create(
+                note=note,
+                user=request.user,
+                defaults={'seen_at': timezone.now()},
+            )
+            return redirect('quicknote_list')
+    else:
+        form = QuickNoteForm(user=request.user)
+    return render(request, 'planner/quicknote_form.html', {'form': form, 'is_create': True})
+
+
+@login_required
+def quicknote_update(request, pk):
+    note = get_object_or_404(QuickNote, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = QuickNoteForm(request.POST, request.FILES, instance=note, user=request.user)
+        if form.is_valid():
+            updated_note = form.save()
+            QuickNoteSeen.objects.update_or_create(
+                note=updated_note,
+                user=request.user,
+                defaults={'seen_at': timezone.now()},
+            )
+            return redirect('quicknote_list')
+    else:
+        form = QuickNoteForm(instance=note, user=request.user)
+    return render(request, 'planner/quicknote_form.html', {'form': form, 'is_create': False})
+
+
+@login_required
+def quicknote_delete(request, pk):
+    note = get_object_or_404(QuickNote, pk=pk, user=request.user)
+    if request.method == 'POST':
+        note.delete()
+        return redirect('quicknote_list')
+    return render(request, 'planner/quicknote_confirm_delete.html', {'note': note})

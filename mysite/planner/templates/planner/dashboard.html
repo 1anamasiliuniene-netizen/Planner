@@ -1,33 +1,40 @@
 {% extends "planner/base.html" %}
 {% load static %}
+<link rel="stylesheet" href="{% static 'planner/css/dashboard.css' %}">
 
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Dashboard</h1>
+<h2 class="mb-4 d-flex align-items-center gap-2">
+    <i class="bi bi-speedometer2"></i> Dashboard
+</h2>
 
-<div class="row">
+<div class="row g-4">
 
-    <!-- LEFT: WORKSPACES (2/3) -->
+    <!-- LEFT: Workspaces (2/3) -->
     <div class="col-lg-8">
-        <h4 class="mb-3">Workspaces</h4>
+        <h5 class="mb-3 text-muted d-flex align-items-center gap-1">
+            <i class="bi bi-diagram-3"></i> Workspaces
+        </h5>
 
         {% if workspaces %}
-        <div class="row">
+        <div class="row g-3">
             {% for workspace in workspaces %}
-            <div class="col-md-6 mb-4">
+            <div class="col-md-6">
                 <a href="{% url 'workspace_detail' workspace.pk %}" class="text-decoration-none">
-                    <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden workspace-card">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 workspace-card position-relative overflow-hidden">
                         {% if workspace.image %}
                         <img src="{{ workspace.image.url }}" class="card-img-top workspace-img"
                              alt="{{ workspace.name }}">
                         {% else %}
-                        <img src="{% static 'planner/img/default_workspace.jpg' %}" class="card-img-top workspace-img"
-                             alt="Default workspace">
+                        <img src="{% static 'planner/img/workspace_defaults/'|add:workspace.type|add:'.svg' %}"
+                             onerror="this.src='{% static 'planner/img/workspace_defaults/default.svg' %}'"
+                             class="card-img-top workspace-img" alt="{{ workspace.name }}">
                         {% endif %}
-                        <div class="card-body">
-                            <h5 class="card-title text-dark fw-bold">{{ workspace.name }}</h5>
-                            <p class="text-muted mb-0">{{ workspace.get_type_display }}</p>
+                        <!-- Overlay title -->
+                        <div class="position-absolute bottom-0 start-0 w-100 bg-dark bg-opacity-50 text-white p-2">
+                            <h6 class="mb-0 fw-semibold"><i class="bi bi-grid"></i> {{ workspace.name }}</h6>
+                            <small>{{ workspace.get_type_display }}</small>
                         </div>
                     </div>
                 </a>
@@ -35,9 +42,11 @@
             {% endfor %}
         </div>
         {% else %}
-        <div class="alert alert-info d-flex justify-content-between align-items-center">
+        <div class="alert alert-light d-flex justify-content-between align-items-center">
             <span>No workspaces yet.</span>
-            <a href="{% url 'workspace_create' %}" class="btn btn-primary btn-sm">Create</a>
+            <a href="{% url 'workspace_create' %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-plus-lg"></i> Create
+            </a>
         </div>
         {% endif %}
     </div>
@@ -45,63 +54,116 @@
     <!-- RIGHT: Tasks Due Today (1/3) -->
     <div class="col-lg-4">
 
-        <!-- Tasks Due Today -->
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <h4 class="mb-0">Tasks Due Today</h4>
+            <h5 class="text-muted mb-0 d-flex align-items-center gap-1">
+                <i class="bi bi-calendar-check"></i> Tasks Due Today
+            </h5>
             <form method="get" class="d-flex align-items-center gap-2">
                 <input type="date" name="date" value="{{ selected_date }}" class="form-control form-control-sm">
-                <button type="submit" class="btn btn-sm btn-outline-primary">Apply</button>
+                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Filter by date">
+                    <i class="bi bi-filter"></i>
+                </button>
             </form>
         </div>
+
         {% if tasks_due_today %}
-            {% for task in tasks_due_today %}
-            <div class="card border-0 shadow-sm mb-3 rounded-4 p-2">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <strong class="{% if task.is_completed %}text-decoration-line-through text-muted{% endif %}">{{ task.title }}</strong>
-                        {% if task.project %}
-                        <div class="text-muted small"><i class="bi bi-kanban"></i> Project: {{ task.project.name }}</div>
+        {% for task in tasks_due_today %}
+        {% comment %}Task card with urgency color{% endcomment %}
+        <div class="card border-0 shadow-sm mb-2 rounded-4 p-2 task-card
+                        {% if task.is_completed %}task-done{% elif task.due_datetime and task.due_datetime < now %}border-danger{% elif task.due_datetime and task.due_datetime|timeuntil < '1:00:00' %}border-warning{% endif %}">
+            <div class="d-flex justify-content-between align-items-start">
+
+                <!-- Task Info -->
+                <div class="flex-grow-1">
+                    <div class="small fw-semibold d-flex align-items-center gap-1
+                                    {% if task.is_completed %}text-muted text-decoration-line-through{% endif %}">
+                        {% if task.is_completed %}
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        {% else %}
+                        <i class="bi bi-circle"></i>
                         {% endif %}
-                        {% if task.due_datetime %}
-                        <div class="text-muted small">Due: {{ task.due_datetime|date:"M d, H:i" }}</div>
-                        {% endif %}
+                        {{ task.title }}
                     </div>
-                    <form method="post" action="{% url 'task_toggle' task.pk %}" class="ms-2">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-sm {% if task.is_completed %}btn-outline-secondary{% else %}btn-outline-success{% endif %}">
-                            {% if task.is_completed %}Undo{% else %}Done{% endif %}
-                        </button>
-                    </form>
+                    {% if task.project %}
+                    <small class="text-muted d-block"><i class="bi bi-kanban"></i> {{ task.project.name }}</small>
+                    {% endif %}
+                    {% if task.due_datetime %}
+                    <small class="text-muted d-block"><i class="bi bi-clock"></i> {{ task.due_datetime|date:"M d, H:i"
+                        }}</small>
+                    {% endif %}
+
+                    <!-- Collapsible Notes & Reminders -->
+                    {% if task.notes.all or task.reminder_set.all %}
+                    <div class="mt-1 small text-muted">
+                        <a class="text-decoration-none" data-bs-toggle="collapse" href="#taskNotes{{ task.pk }}"
+                           role="button" aria-expanded="false" aria-controls="taskNotes{{ task.pk }}">
+                            <i class="bi bi-chevron-down"></i> Notes / Reminders
+                        </a>
+                        <div class="collapse mt-1" id="taskNotes{{ task.pk }}">
+                            {% for note in task.notes.all %}
+                            <div><i class="bi bi-journal-text"></i> {{ note.content|truncatewords:10 }}</div>
+                            {% endfor %}
+                            {% for reminder in task.reminder_set.all %}
+                            {% if not reminder.is_resolved %}
+                            <div><i class="bi bi-bell"></i> {{ reminder.message|default:"Reminder" }}</div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
 
-                <!-- Task Notes (inline) -->
-                {% if task.notes.all %}
-                    {% for note in task.notes.all %}
-                    <div class="small text-muted mb-1">{{ note.content }}</div>
-                    {% endfor %}
-                {% endif %}
-
-                <!-- Task Reminders -->
-                {% if task.reminder_set.all %}
-                    {% for reminder in task.reminder_set.all %}
-                        {% if not reminder.is_resolved %}
-                        <div class="card small-card mb-1 p-1 d-flex justify-content-between align-items-center">
-                            <span class="small">{{ reminder.message|default:"Reminder" }}</span>
-                            <form method="post" action="{% url 'reminder_resolve' reminder.id %}">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-success">Resolve</button>
-                            </form>
-                        </div>
+                <!-- Done / Undo -->
+                <form method="post" action="{% url 'task_toggle' task.pk %}" class="ms-2">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm
+                               {% if task.is_completed %}btn-outline-secondary{% else %}btn-outline-success{% endif %}"
+                            title="{% if task.is_completed %}Undo{% else %}Mark as Done{% endif %}">
+                        {% if task.is_completed %}
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        {% else %}
+                        <i class="bi bi-check-lg"></i>
                         {% endif %}
-                    {% endfor %}
-                {% endif %}
+                    </button>
+                </form>
+
             </div>
-            {% endfor %}
+        </div>
+        {% endfor %}
         {% else %}
-        <p class="text-muted">No tasks due today.</p>
+        <p class="text-muted"><i class="bi bi-inbox"></i> No tasks due today.</p>
         {% endif %}
 
     </div>
 </div>
 
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hover effect for workspace cards */
+    .workspace-card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+        transition: all 0.2s ease-in-out;
+    }
+
+    /* Task done styling */
+    .task-done {
+        background-color: #f8f9fa;
+    }
+
+    /* Task card urgent colors */
+    .task-card.border-danger {
+        border-left: 4px solid #dc3545;
+    }
+    .task-card.border-warning {
+        border-left: 4px solid #ffc107;
+    }
+
+    /* Task icon alignment */
+    .task-card i.bi {
+        font-size: 0.9rem;
+    }
+</style>
 {% endblock %}

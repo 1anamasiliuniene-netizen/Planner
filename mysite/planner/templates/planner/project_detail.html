@@ -156,18 +156,28 @@
     <div class="col-lg-4">
 
         {% if not is_create_mode %}
+        <!-- Archive button -->
+        <div class="mb-4">
+            <a href="{% url 'project_archive' project.pk %}" class="btn btn-sm btn-outline-warning w-100">
+                <i class="bi bi-archive"></i> Archive this project
+            </a>
+        </div>
+
         <!-- Other Projects -->
-        <h6 class="mt-4 mb-3">Other Projects</h6>
-        {% for p in workspace.projects.all %}
-        {% if not project or p.pk != project.pk %}
+        <h6 class="mt-2 mb-3">Other Projects</h6>
+        {% for p in other_projects %}
         <div class="card small-card mb-2 p-2 d-flex justify-content-between align-items-center">
             <span class="small">{{ p.name }}</span>
             <a href="{% url 'project_detail' p.pk %}" class="btn btn-sm btn-light" title="Open"><i class="bi bi-arrow-right"></i></a>
         </div>
-        {% endif %}
         {% empty %}
         <p class="text-muted small">No other projects.</p>
         {% endfor %}
+        <div class="mt-2">
+            <a href="{% url 'project_archived_list' %}" class="btn btn-sm btn-outline-secondary w-100">
+                <i class="bi bi-archive"></i> Archived projects
+            </a>
+        </div>
 
         {% endif %}
     </div>

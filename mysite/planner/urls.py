@@ -5,6 +5,13 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    # Search
+    path("search/", views.search, name="search"),
+
+    # Demo
+    path("demo/login/", views.demo_login, name="demo_login"),
+    path("demo/reset/", views.demo_reset, name="demo_reset"),
+
     # Dashboard
     path("", views.dashboard, name="dashboard"),
     path("profile/", views.profile_view, name="profile"),
@@ -18,6 +25,9 @@ urlpatterns = [
     # Projects
     path("projects/create/", views.project_create, name="project_create"),
     path("projects/<int:pk>/", views.project_detail, name="project_detail"),
+    path("projects/<int:pk>/archive/", views.project_archive, name="project_archive"),
+    path("projects/<int:pk>/restore/", views.project_restore, name="project_restore"),
+    path("projects/archived/", views.project_archived_list, name="project_archived_list"),
     path("workspaces/<int:workspace_id>/projects/", views.project_list, name="project_list"),
 
     # Tasks
@@ -30,15 +40,27 @@ urlpatterns = [
     path("tasks/<int:pk>/share/", views.share_task, name="share_task"),
     path('tasks/<int:task_id>/add-reminder/', views.reminder_create_for_task, name='reminder_create_for_task'),
     path("tasks/<int:task_id>/add_note/", views.note_create_for_task, name="note_create_for_task"),
+    path('task/<int:pk>/update-due/', views.task_update_due, name='task_update_due'),
 
-    # Notes
-    path("notes/", views.note_list, name="note_list"),
+    # Notes (legacy alias to memos)
+    path("notes/", views.quicknote_list, name="note_list"),
 
     # Events
     path("events/", views.event_list, name="event_list"),
     path("events/create/", views.event_create, name="event_create"),
-    path("events/<int:pk>/edit/", views.event_update, name="event_update"),
+    path("events/<int:pk>/", views.event_detail, name="event_detail"),
+    path("events/<int:pk>/edit/", views.event_update, name="event_edit"),
     path("events/<int:pk>/delete/", views.event_delete, name="event_delete"),
+
+    # Calendar
+    path('calendar/', views.calendar_view, name='calendar'),
+
+    # QuickNotes
+    path('memos/', views.quicknote_list, name='quicknote_list'),
+    path('memos/create/', views.quicknote_create, name='quicknote_create'),
+    path('memos/<int:pk>/', views.quicknote_detail, name='quicknote_detail'),
+    path('memos/<int:pk>/edit/', views.quicknote_update, name='quicknote_update'),
+    path('memos/<int:pk>/delete/', views.quicknote_delete, name='quicknote_delete'),
 
     # Reminders
     path("reminders/", views.reminder_list, name="reminder_list"),

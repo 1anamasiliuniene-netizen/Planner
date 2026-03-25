@@ -1,0 +1,12 @@
+{% extends "planner/base.html" %}
+{% block title %}Delete Memo{% endblock %}
+
+{% block content %}
+<h2>Delete Memo</h2>
+<p>Are you sure you want to delete "{{ note.title }}"?</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+    <a href="{% url 'quicknote_list' %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}
