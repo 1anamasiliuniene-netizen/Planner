@@ -32,6 +32,17 @@ h6 { font-size: 0.9rem; font-weight: 600; }
     font-weight: 500;
 }
 
+/* Make the reminder badge stick to the bell icon on all screen sizes */
+.nav-link.position-relative {
+    display: inline-block; /* ensure relative positioning applies to the bell only */
+}
+
+.nav-link.position-relative .badge {
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+
+
 /* ========================
    CARDS (GLOBAL)
 ======================== */
