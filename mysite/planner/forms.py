@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
-from .models import Task, Event, Reminder, Workspace, Project
+from .models import Task, Event, Reminder, Workspace, Project, Note
 from django.contrib.auth.forms import PasswordChangeForm
 
 # -----------------------
@@ -16,12 +16,12 @@ class TaskForm(forms.ModelForm):
             "project",
             "title",
             "description",
-            "due_date",
+            "due_datetime",
             "priority",
             "is_completed",
         ]
         widgets = {
-            "due_date": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "due_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -89,6 +89,17 @@ class EventForm(forms.ModelForm):
             "end_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
 
+# -----------------------
+# Note Form
+# -----------------------
+class NoteForm(forms.ModelForm):
+    class Meta:
+        model = Note
+        fields = ["title", "content"]
+        widgets = {
+            "title": forms.TextInput(attrs={"placeholder": "Note title", "class": "form-control form-control-sm mb-2"}),
+            "content": forms.Textarea(attrs={"placeholder": "Note content", "class": "form-control form-control-sm mb-2", "rows": 2}),
+        }
 
 # -----------------------
 # Reminder Form
@@ -96,9 +107,20 @@ class EventForm(forms.ModelForm):
 class ReminderForm(forms.ModelForm):
     class Meta:
         model = Reminder
-        fields = ["workspace", "task", "event", "remind_at", "is_resolved"]
-        widgets = {"remind_at": forms.DateTimeInput(attrs={"type": "datetime-local"})}
+        fields = ["task", "message", "due_datetime", "is_resolved"]
+        widgets = {
+            "due_datetime": forms.DateTimeInput(
+                attrs={"type": "datetime-local"},
+                format="%Y-%m-%dT%H:%M"  # important!
+            ),
+            "message": forms.TextInput(attrs={"placeholder": "Reminder message"}),
+        }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make sure the datetime value is in the correct format for the input
+        if self.instance and self.instance.due_datetime:
+            self.initial["due_datetime"] = self.instance.due_datetime.strftime("%Y-%m-%dT%H:%M")
 
 # -----------------------
 # Profile Form (Crispy + Bootstrap 5)

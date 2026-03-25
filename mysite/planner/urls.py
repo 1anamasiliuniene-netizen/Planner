@@ -28,6 +28,8 @@ urlpatterns = [
     path("tasks/<int:pk>/edit/", views.task_update, name="task_update"),
     path("tasks/<int:pk>/delete/", views.task_delete, name="task_delete"),
     path("tasks/<int:pk>/share/", views.share_task, name="share_task"),
+    path('tasks/<int:task_id>/add-reminder/', views.reminder_create_for_task, name='reminder_create_for_task'),
+    path("tasks/<int:task_id>/add_note/", views.note_create_for_task, name="note_create_for_task"),
 
     # Notes
     path("notes/", views.note_list, name="note_list"),
@@ -43,6 +45,7 @@ urlpatterns = [
     path("reminders/create/", views.reminder_create, name="reminder_create"),
     path("reminders/<int:pk>/edit/", views.reminder_update, name="reminder_update"),
     path("reminders/<int:pk>/delete/", views.reminder_delete, name="reminder_delete"),
+    path('reminder/<int:reminder_id>/resolve/', views.reminder_resolve, name='reminder_resolve'),
 
     # Authentication
     path("accounts/login/", auth_views.LoginView.as_view(template_name="user/login.html"), name="login"),

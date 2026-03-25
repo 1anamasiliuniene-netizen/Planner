@@ -15,7 +15,10 @@ from .forms import (
     WorkspaceForm,
     ProjectForm,
 )
-from .models import Task, Event, Reminder, Workspace, Membership, Project
+from .models import Task, Event, Reminder, Workspace, Membership, Project, Note
+from django.db.models import Q
+from django.utils import timezone
+from django.utils.dateparse import parse_date
 
 
 # -----------------------
@@ -170,11 +173,26 @@ def signup(request):
 # -----------------------
 @login_required
 def dashboard(request):
-    workspaces = Workspace.objects.filter(membership__user=request.user)
-    reminders = Reminder.objects.filter(workspace__membership__user=request.user)
-    notes = []
-    return render(request, "planner/dashboard.html", {"workspaces": workspaces, "reminders": reminders, "notes": notes})
+    # Workspaces visible to current user
+    workspaces = Workspace.objects.filter(membership__user=request.user).distinct()
 
+    selected_date = parse_date(request.GET.get("date", "")) or timezone.localdate()
+    tasks_due_today = (
+        Task.objects.filter(
+            workspace__in=workspaces,
+            due_datetime__date=selected_date,
+            is_completed=False,
+        )
+        .select_related("workspace", "project")
+        .prefetch_related("notes", "reminder_set")
+        .order_by("due_datetime")
+    )
+
+    return render(request, "planner/dashboard.html", {
+        "workspaces": workspaces,
+        "tasks_due_today": tasks_due_today,
+        "selected_date": selected_date.isoformat(),
+    })
 
 # -----------------------
 # Project Views
@@ -387,7 +405,7 @@ def workspace_delete(request, pk):
 @login_required
 def task_list(request):
     tasks = Task.objects.filter(workspace__membership__user=request.user).select_related("workspace", "project").order_by(
-        "workspace__name", "project__name", "due_date", "title"
+        "workspace__name", "project__name", "due_datetime", "title"
     )
     grouped_tasks = group_tasks_by_workspace_project(tasks)
     return render(request, "planner/tasks.html", {"grouped_tasks": grouped_tasks})
@@ -477,6 +495,11 @@ def task_toggle(request, pk):
         task.is_completed = not task.is_completed
         task.save(update_fields=["is_completed"])
 
+    # Prefer returning to where the action was triggered (dashboard/project/task list).
+    referer = request.META.get("HTTP_REFERER")
+    if referer:
+        return redirect(referer)
+
     if task.project_id:
         return redirect("project_detail", pk=task.project_id)
     return redirect("task_list")
@@ -508,6 +531,41 @@ def share_task(request, pk):
     else:
         form = TaskShareForm(instance=task)
     return render(request, "planner/task_share.html", {"form": form, "task": task})
+
+def reminder_create_for_task(request, task_id):
+    """Create a reminder for a specific task from the quick-add form."""
+    task = get_object_or_404(Task, pk=task_id)
+
+    if not user_in_workspace(task.workspace, request.user):
+        messages.error(request, "Access denied.")
+        return redirect("task_list")
+
+    if request.method == "POST":
+        message = request.POST.get("message", "").strip()
+        due_datetime_str = request.POST.get("due_datetime", "").strip()
+
+        if message:
+            reminder = Reminder.objects.create(
+                task=task,
+                message=message,
+                due_datetime=due_datetime_str if due_datetime_str else None,
+            )
+            messages.success(request, "Reminder added.")
+        else:
+            messages.warning(request, "Please enter a reminder message.")
+
+    # Redirect back to the referring page (task detail or project detail)
+    return redirect(request.META.get('HTTP_REFERER', f'/tasks/{task_id}/'))
+
+def note_create_for_task(request, task_id):
+    task = get_object_or_404(Task, pk=task_id)
+    if request.method == "POST":
+        title = request.POST.get("title")
+        content = request.POST.get("content")
+        if title or content:
+            Note.objects.create(task=task, title=title, content=content)
+    return redirect('project_detail', pk=task.project.pk)
+
 
 
 # -----------------------
@@ -620,6 +678,12 @@ def reminder_delete(request, pk):
             messages.success(request, "Reminder deleted.")
             return redirect("reminder_list")
     return render(request, "planner/reminder_confirm_delete.html", {"reminder": reminder})
+
+def reminder_resolve(request, reminder_id):
+    reminder = get_object_or_404(Reminder, pk=reminder_id)
+    reminder.is_resolved = True
+    reminder.save()
+    return redirect(request.META.get('HTTP_REFERER', '/'))
 
 
 @login_required

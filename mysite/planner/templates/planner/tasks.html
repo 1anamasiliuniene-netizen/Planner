@@ -64,9 +64,9 @@
                                         {{ task.title }}
                                     </span>
 
-                                    {% if task.due_date %}
+                                    {% if task.due_datetime %}
                                         <small class="text-muted ms-2">
-                                            Due: {{ task.due_date|date:"M d, Y H:i" }}
+                                            Due: {{ task.due_datetime|date:"M d, Y H:i" }}
                                         </small>
                                     {% endif %}
                                 </div>

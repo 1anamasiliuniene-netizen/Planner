@@ -1,10 +1,13 @@
 {% extends "planner/base.html" %}
 {% load crispy_forms_tags static %}
 
-{% block title %}{% if is_create_mode %}Create Task{% else %}Task: {{ task.title }}{% endif %}{% endblock %}
+{% block title %}
+{% if is_create_mode %}Create Task{% else %}Task: {{ task.title }}{% endif %}
+{% endblock %}
 
 {% block content %}
 <h2 class="mb-4">{% if is_create_mode %}Create Task{% else %}Task: {{ task.title }}{% endif %}</h2>
+
 {% if not is_create_mode %}
 <p class="text-muted mb-4">
     Project: <strong>{% if project %}{{ project.name }}{% else %}No Project{% endif %}</strong> |
@@ -19,7 +22,10 @@
 {% endif %}
 
 <div class="row">
+    <!-- LEFT: Task Form, Reminders & Notes -->
     <div class="col-lg-8">
+
+        <!-- Task Form -->
         <div class="card mb-4 shadow-sm rounded-4 p-3">
             <h5>{% if is_create_mode %}New Task{% else %}Edit Task{% endif %}</h5>
             <form method="post">
@@ -33,7 +39,8 @@
         </div>
 
         {% if not is_create_mode %}
-        <div>
+        <!-- Sibling Tasks -->
+        <div class="mb-4">
             <h5>Other Tasks in Project</h5>
             <ul class="list-group mb-2">
                 {% for t in sibling_tasks %}
@@ -46,11 +53,88 @@
                 {% endfor %}
             </ul>
         </div>
-        {% else %}
-        <div class="alert alert-info">Select workspace/project and create your task.</div>
+
+        <!-- Task Reminders -->
+        <div class="mb-4">
+            <h5>Reminders</h5>
+            {% if task.reminder_set.all %}
+                {% for reminder in task.reminder_set.all %}
+                {% if not reminder.is_resolved %}
+                <div class="card mb-2 p-2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ reminder.message }}</strong><br>
+                        {% if reminder.due_datetime %}
+                        <small class="text-muted">Due: {{ reminder.due_datetime|date:"M d, H:i" }}</small>
+                        {% else %}
+                        <small class="text-muted">No due date</small>
+                        {% endif %}
+                    </div>
+                    <form method="post" action="{% url 'reminder_resolve' reminder.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-success">Resolve</button>
+                    </form>
+                </div>
+                {% endif %}
+                {% endfor %}
+            {% else %}
+                <p class="text-muted small">No reminders for this task.</p>
+            {% endif %}
+
+            <!-- Add Reminder Form -->
+            <div class="mt-2">
+                <button class="btn btn-sm btn-outline-primary w-100" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#addReminderForm"
+                        aria-expanded="false" aria-controls="addReminderForm">
+                    <i class="bi bi-bell"></i> Add Reminder
+                </button>
+                <div class="collapse mt-2" id="addReminderForm">
+                    <div class="card card-body p-2 shadow-sm">
+                        <form method="post" action="{% url 'reminder_create_for_task' task.pk %}">
+                            {% csrf_token %}
+                            <input type="text" name="message" class="form-control form-control-sm mb-2"
+                                   placeholder="Reminder message">
+                            <input type="datetime-local" name="due_datetime" class="form-control form-control-sm mb-2">
+                            <button type="submit" class="btn btn-sm btn-success w-100">Add Reminder</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Notes -->
+        <div class="mb-4">
+            <h5>Notes</h5>
+            {% if task.notes.all %}
+                {% for note in task.notes.all %}
+                <div class="small text-muted mb-1">{{ note.content }}</div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted small">No notes for this task.</p>
+            {% endif %}
+
+            <!-- Add Note Form -->
+            <div class="mt-2">
+                <button class="btn btn-sm btn-outline-primary w-100" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#addNote{{ task.pk }}"
+                        aria-expanded="false" aria-controls="addNote{{ task.pk }}">
+                    <i class="bi bi-journal-plus"></i> Add Note
+                </button>
+                <div class="collapse mt-2" id="addNote{{ task.pk }}">
+                    <div class="card card-body p-2 shadow-sm">
+                        <form method="post" action="{% url 'note_create_for_task' task.pk %}">
+                            {% csrf_token %}
+                            <input type="text" name="title" class="form-control form-control-sm mb-2" placeholder="Note title">
+                            <textarea name="content" class="form-control form-control-sm mb-2" rows="2" placeholder="Note content"></textarea>
+                            <button type="submit" class="btn btn-sm btn-success w-100">Add Note</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
         {% endif %}
     </div>
 
+    <!-- RIGHT: Workspace Overview -->
     <div class="col-lg-4">
         {% if not is_create_mode %}
         <h5>Workspace Overview</h5>

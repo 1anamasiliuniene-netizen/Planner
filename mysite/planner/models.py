@@ -62,7 +62,7 @@ class Task(WorkspaceModel):
     )
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
-    due_date = models.DateTimeField(null=True, blank=True)
+    due_datetime = models.DateTimeField(null=True, blank=True)
     priority = models.IntegerField(default=0)
     is_completed = models.BooleanField(default=False)
     shared_with = models.ManyToManyField(User, blank=True, related_name="shared_tasks")
@@ -74,9 +74,18 @@ class Event(WorkspaceModel):
     location = models.CharField(max_length=200, blank=True)
     notes = models.TextField(blank=True)
 
-class Reminder(WorkspaceModel):
-    task = models.ForeignKey(Task, null=True, blank=True, on_delete=models.CASCADE)
-    event = models.ForeignKey(Event, null=True, blank=True, on_delete=models.CASCADE)
-    remind_at = models.DateTimeField()
+class Reminder(models.Model):
+    task = models.ForeignKey('Task', on_delete=models.CASCADE, blank=True, null=True)
+    event = models.ForeignKey('Event', on_delete=models.CASCADE, blank=True, null=True)
+    message = models.TextField(blank=True)
+    due_datetime = models.DateTimeField(blank=True, null=True)  # <-- combined date & time
     is_resolved = models.BooleanField(default=False)
 
+    def __str__(self):
+        return f"{self.message} ({self.due_datetime})"
+
+class Note(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='notes')
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)

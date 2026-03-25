@@ -1,88 +1,176 @@
 {% extends "planner/base.html" %}
 {% load crispy_forms_tags static %}
 
-{% block title %}{% if is_create_mode %}Create Project{% else %}Project: {{ project.name }}{% endif %}{% endblock %}
+{% block title %}
+{% if is_create_mode %}Create Project{% else %}Project: {{ project.name }}{% endif %}
+{% endblock %}
 
 {% block content %}
 <h2 class="mb-4">{% if is_create_mode %}Create Project{% else %}Project: {{ project.name }}{% endif %}</h2>
-<p class="text-muted mb-4">Workspace: {{ workspace.name }}</p>
+<p class="text-muted mb-4">Workspace: <strong>{{ workspace.name }}</strong></p>
 
-<div class="row">
+<div class="row g-4">
+
+    <!-- LEFT: Tasks -->
     <div class="col-lg-8">
-        <div class="card mb-4 shadow-sm rounded-4 p-3">
-            <h5>{% if is_create_mode %}New Project{% else %}Edit Project{% endif %}</h5>
-            <form method="post">
-                {% csrf_token %}
-                {{ project_form|crispy }}
-                <button type="submit" name="project_submit" class="btn btn-primary mt-2">
-                    {% if is_create_mode %}Create Project{% else %}Save Project{% endif %}
-                </button>
-            </form>
-        </div>
 
         {% if not is_create_mode %}
-        <div>
-            <h5>Tasks</h5>
-            <ul class="list-group mb-2">
-                {% for task in tasks %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    {{ task.title }}
-                    <a href="{% url 'task_update' task.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
-                </li>
-                {% empty %}
-                <li class="list-group-item text-muted">No tasks yet in this project.</li>
-                {% endfor %}
-            </ul>
+        <h5 class="mb-3">Tasks</h5>
 
-            <div class="card p-3 shadow-sm rounded-4">
-                <h6>Add New Task</h6>
+        <div class="row g-3 mb-4">
+            {% for task in tasks %}
+            <div class="col-12 col-md-6 col-xl-4">
+                <div class="card task-card p-2">
+
+                    <div class="d-flex align-items-center">
+                        <!-- Checkbox -->
+                        <form method="post" action="{% url 'task_toggle' task.pk %}">
+                            {% csrf_token %}
+                            <input type="checkbox" class="form-check-input"
+                                   onChange="this.form.submit()"
+                                   {% if task.is_completed %}checked{% endif %}>
+                        </form>
+
+                        <!-- Title -->
+                        <div class="ms-2 flex-grow-1 small
+                            {% if task.is_completed %}text-decoration-line-through text-muted{% endif %}">
+                            {{ task.title }}
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-flex gap-1">
+                            <a href="{% url 'task_detail' task.pk %}" class="btn btn-sm btn-light" title="View"><i class="bi bi-eye"></i></a>
+                            <a href="{% url 'task_update' task.pk %}" class="btn btn-sm btn-light" title="Edit"><i class="bi bi-pencil"></i></a>
+                        </div>
+                    </div>
+
+                    {% if task.due_datetime %}
+                    <div class="small text-muted mt-1">
+                        {{ task.due_datetime|date:"M d, H:i" }}
+                    </div>
+                    {% endif %}
+
+                    <!-- Existing Task Reminders -->
+                    {% if task.reminder_set.all %}
+                    <div class="mt-2">
+                        {% for reminder in task.reminder_set.all %}
+                        <div class="card small-card mb-1 p-1 d-flex justify-content-between align-items-center">
+                            <span class="small">{{ reminder.message|default:"Reminder" }}</span>
+                            <span class="badge {% if reminder.is_resolved %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                {% if reminder.is_resolved %}Done{% else %}Pending{% endif %}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Add Reminder Button + Collapsible Form -->
+                    <div class="mt-2">
+                        <button class="btn btn-sm btn-outline-primary w-100" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#addReminder{{ task.pk }}"
+                                aria-expanded="false" aria-controls="addReminder{{ task.pk }}">
+                            <i class="bi bi-bell"></i> Add Reminder
+                        </button>
+
+                        <div class="collapse mt-2" id="addReminder{{ task.pk }}">
+                            <div class="card card-body p-2 shadow-sm">
+                                <form method="post" action="{% url 'reminder_create_for_task' task.pk %}">
+                                    {% csrf_token %}
+                                    <input type="text" name="message" class="form-control form-control-sm mb-2"
+                                           placeholder="Reminder message">
+                                    <input type="datetime-local" name="due_datetime"
+                                           class="form-control form-control-sm mb-2">
+                                    <button type="submit" class="btn btn-sm btn-success w-100">Add Reminder</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Existing Task Notes -->
+                    {% if task.notes.all %}
+                    <div class="mt-2">
+                        {% for note in task.notes.all %}
+                        <div class="small text-muted mb-1">{{ note.content }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Add Note Button + Collapsible Form -->
+                    <div class="mt-2">
+                        <button class="btn btn-sm btn-outline-primary w-100" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#addNote{{ task.pk }}"
+                                aria-expanded="false" aria-controls="addNote{{ task.pk }}">
+                            <i class="bi bi-journal-plus"></i> Add Note
+                        </button>
+
+                        <div class="collapse mt-2" id="addNote{{ task.pk }}">
+                            <div class="card card-body p-2 shadow-sm">
+                                <form method="post" action="{% url 'note_create_for_task' task.pk %}">
+                                    {% csrf_token %}
+                                    <input type="text" name="title" class="form-control form-control-sm mb-2" placeholder="Note title">
+                                    <textarea name="content" class="form-control form-control-sm mb-2" rows="2" placeholder="Note content"></textarea>
+                                    <button type="submit" class="btn btn-sm btn-success w-100">Add Note</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted small">No tasks yet in this project.</p>
+            {% endfor %}
+        </div>
+
+        <!-- Add Task Collapsible Form -->
+        <div class="card p-3 mb-4">
+            <h6>
+                <a class="text-decoration-none" data-bs-toggle="collapse" href="#addTaskForm" role="button">
+                    <i class="bi bi-plus-circle"></i> Add Task
+                </a>
+            </h6>
+            <div class="collapse mt-2" id="addTaskForm">
                 <form method="post">
                     {% csrf_token %}
                     {{ task_form|crispy }}
-                    <button type="submit" name="task_submit" class="btn btn-success mt-2">Add Task</button>
+                    <button type="submit" name="task_submit" class="btn btn-success btn-sm mt-2">Add</button>
                 </form>
             </div>
         </div>
+
         {% else %}
-        <div class="alert alert-info">After creating the project you can add tasks here.</div>
+        <!-- Create mode -->
+        <div class="card p-3 mb-4">
+            <h6>New Project</h6>
+            <form method="post">
+                {% csrf_token %}
+                {{ project_form|crispy }}
+                <button type="submit" name="project_submit" class="btn btn-primary btn-sm mt-2">Create</button>
+            </form>
+        </div>
         {% endif %}
+
     </div>
 
+    <!-- RIGHT: Project & Workspace Info -->
     <div class="col-lg-4">
-        <h5>Workspace Overview</h5>
-        <p><strong>{{ workspace.name }}</strong></p>
-
-        <h6>Other Projects</h6>
-        <ul class="list-group mb-2">
-            {% for p in workspace.projects.all %}
-                {% if not project or p.pk != project.pk %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    {{ p.name }}
-                    <a href="{% url 'project_detail' p.pk %}" class="btn btn-sm btn-outline-secondary">Go</a>
-                </li>
-                {% endif %}
-            {% empty %}
-            <li class="list-group-item text-muted">No other projects.</li>
-            {% endfor %}
-        </ul>
 
         {% if not is_create_mode %}
-        <h5 class="mt-4">Reminders</h5>
-        {% for reminder in workspace.reminder_set.all %}
-            <div class="card mb-2 p-2">
-                <div class="d-flex justify-content-between align-items-center">
-                    <span>{% if reminder.task %}{{ reminder.task.title }}{% elif reminder.event %}{{ reminder.event.title }}{% else %}Reminder{% endif %}</span>
-                    {% if reminder.is_resolved %}
-                        <span class="badge bg-success">Done</span>
-                    {% else %}
-                        <span class="badge bg-warning text-dark">Pending</span>
-                    {% endif %}
-                </div>
-            </div>
+        <!-- Other Projects -->
+        <h6 class="mt-4 mb-3">Other Projects</h6>
+        {% for p in workspace.projects.all %}
+        {% if not project or p.pk != project.pk %}
+        <div class="card small-card mb-2 p-2 d-flex justify-content-between align-items-center">
+            <span class="small">{{ p.name }}</span>
+            <a href="{% url 'project_detail' p.pk %}" class="btn btn-sm btn-light" title="Open"><i class="bi bi-arrow-right"></i></a>
+        </div>
+        {% endif %}
         {% empty %}
-            <p class="text-muted">No reminders.</p>
+        <p class="text-muted small">No other projects.</p>
         {% endfor %}
+
         {% endif %}
     </div>
+
 </div>
 {% endblock %}
