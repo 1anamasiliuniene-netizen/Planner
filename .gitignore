@@ -1,2 +1,26 @@
+# Local secrets (never commit)
 /mysite/mysite/my_settings.py
+
+# Database
 /mysite/db.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.eggs/
+
+# Virtual environment
+.venv/
+
+# IDE
+.idea/
+
+# Static files collected for production
+/mysite/staticfiles/
+
+# OS files
+.DS_Store
+Thumbs.db
+

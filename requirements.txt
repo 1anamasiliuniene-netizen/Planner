@@ -1,0 +1,9 @@
+Django==6.0.3
+crispy-bootstrap5==2026.3
+django-crispy-forms==2.6
+django-filter==25.2
+djangorestframework==3.17.1
+drf-spectacular==0.29.0
+pillow==12.1.1
+PyYAML==6.0.3
+

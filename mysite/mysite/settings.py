@@ -118,7 +118,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -183,8 +187,8 @@ SPECTACULAR_SETTINGS = {
     },
     'SERVERS': [
         {
-            'url': 'http://localhost:8001',
-            'description': 'Development server',
+            'url': 'http://localhost:8001' if DEBUG else 'https://{}'.format(ALLOWED_HOSTS[0] if ALLOWED_HOSTS else 'localhost'),
+            'description': 'Development server' if DEBUG else 'Production server',
         },
     ],
     'TAGS': [
