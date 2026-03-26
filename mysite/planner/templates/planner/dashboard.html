@@ -88,8 +88,7 @@
                     <small class="text-muted d-block"><i class="bi bi-kanban"></i> {{ task.project.name }}</small>
                     {% endif %}
                     {% if task.due_datetime %}
-                    <small class="text-muted d-block"><i class="bi bi-clock"></i> {{ task.due_datetime|date:"M d, H:i"
-                        }}</small>
+                    <small class="text-muted d-block"><i class="bi bi-clock"></i> {{ task.due_datetime|date:"M d, H:i" }}</small>
                     {% endif %}
 
                     <!-- Collapsible Notes & Reminders -->
