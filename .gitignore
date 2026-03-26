@@ -24,3 +24,21 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# User-uploaded media (keep only defaults/)
+/mysite/media/quicknote_images/
+/mysite/media/workspace_images/*.jpg
+!/mysite/media/workspace_images/defaults/
+
+# Documentation & dev scripts
+/documentation/
+/consolidate_workspaces.py
+/do_consolidate.py
+/final_consolidate.py
+/simple_consolidate.py
+/test_api.py
+/test_api.sh
+/test_consolidate.py
+/deploy_pythonanywhere.sh
+/pythonanywhere_wsgi.py
+/DEPLOY_PYTHONANYWHERE.md
+
