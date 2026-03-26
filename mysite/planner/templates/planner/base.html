@@ -15,7 +15,7 @@
 <body>
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
-    <div class="container">
+    <div class="container-fluid px-4 px-lg-5">
         <a class="navbar-brand" href="{% url 'dashboard' %}">My Planner</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -140,8 +140,10 @@
 </div>
 
 <!-- Footer -->
-<footer class="bg-light text-center py-3 mt-4 border-top">
-    <small>&copy; 2026 My Planner</small>
+<footer class="bg-light py-3 mt-4 border-top">
+    <div class="container-fluid px-4 px-lg-5 text-center">
+        <small>&copy; 2026 My Planner</small>
+    </div>
 </footer>
 
 <!-- Bootstrap JS -->

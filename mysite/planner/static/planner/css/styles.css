@@ -1,6 +1,23 @@
 /* ========================
    GLOBAL RESET / BASE
 ======================== */
+@media (min-width: 1400px) {
+    body {
+        font-size: 1rem;
+    }
+
+    h1 { font-size: 1.8rem; }
+    h2 { font-size: 1.5rem; }
+    h5 { font-size: 1.2rem; }
+
+    .btn {
+        font-size: 0.9rem;
+    }
+
+    .badge {
+        font-size: 0.8rem;
+    }
+}
 
 body {
     font-size: 0.9rem;
@@ -126,8 +143,8 @@ label {
 ======================== */
 
 .row.g-3 {
-    --bs-gutter-x: 0.7rem;
-    --bs-gutter-y: 0.7rem;
+    --bs-gutter-x: 1.2rem;
+    --bs-gutter-y: 1.2rem;
 }
 
 /* ========================
