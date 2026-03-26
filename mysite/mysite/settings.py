@@ -16,6 +16,11 @@ DEBUG = DEBUG
 
 ALLOWED_HOSTS = ALLOWED_HOSTS
 
+# CSRF trusted origins (required by Django 4.0+ for production POST forms)
+CSRF_TRUSTED_ORIGINS = [
+    f'https://{host}' for host in ALLOWED_HOSTS if not host.startswith('localhost') and not host.startswith('127.')
+]
+
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
