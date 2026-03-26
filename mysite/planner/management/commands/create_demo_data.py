@@ -96,13 +96,13 @@ class Command(BaseCommand):
 
         # Fallback if owner had no workspaces
         if not demo_workspaces:
-            for name, ws_type in [("Personal", "personal"), ("Work", "work"), ("Family", "family")]:
+            for name, ws_type in [("Health", "personal"), ("Personal", "personal"), ("Work", "work"), ("Family", "family")]:
                 ws = Workspace.objects.create(name=name, type=ws_type)
                 Membership.objects.create(workspace=ws, user=demo_user, role="admin")
                 demo_workspaces.append(ws)
 
-        # ── Assign projects/tasks/events/notes round-robin across workspaces ──
-        # Use the first 3 distinct workspaces for the demo content
+        # ── Assign projects/tasks/events/notes across workspaces ────────────
+        # ws(0)=Health, ws(1)=Personal, ws(2)=Work, ws(3)=Family
         ws_count = len(demo_workspaces)
         def ws(i):
             return demo_workspaces[i % ws_count]
@@ -114,53 +114,35 @@ class Command(BaseCommand):
                 ("Meal prep for the week",        False, now + datetime.timedelta(days=1)),
                 ("Buy new running shoes",         False, None),
             ]),
-            (ws(0), "Home Improvement", [
+            (ws(1), "Home Improvement", [
                 ("Fix kitchen tap",               False, now + datetime.timedelta(days=7)),
                 ("Repaint living room",           False, None),
                 ("Order new bookshelf",           True,  now - datetime.timedelta(days=2)),
             ]),
-            (ws(1), "Q2 Product Launch", [
+            (ws(2), "Q2 Product Launch", [
                 ("Write launch blog post",        False, now + datetime.timedelta(days=5)),
                 ("Prepare demo video",            False, now + datetime.timedelta(days=4)),
                 ("Send press release",            False, now + datetime.timedelta(days=6)),
                 ("Update pricing page",           True,  now - datetime.timedelta(days=3)),
             ]),
-            (ws(1), "Team Onboarding", [
+            (ws(2), "Team Onboarding", [
                 ("Set up new hire accounts",      True,  now - datetime.timedelta(days=5)),
                 ("Schedule 1:1 meetings",         False, now + datetime.timedelta(days=2)),
                 ("Create onboarding checklist",   False, None),
             ]),
-            (ws(2), "Summer Vacation", [
+            (ws(3), "Summer Vacation", [
                 ("Book flights to Barcelona",     False, now + datetime.timedelta(days=14)),
                 ("Reserve hotel",                 False, now + datetime.timedelta(days=14)),
                 ("Pack suitcases",                False, now + datetime.timedelta(days=20)),
                 ("Notify school about absence",   True,  now - datetime.timedelta(days=1)),
             ]),
-            (ws(2), "Home Finances", [
+            (ws(3), "Home Finances", [
                 ("Review monthly budget",         False, now + datetime.timedelta(days=2)),
                 ("Pay electricity bill",          False, now + datetime.timedelta(days=1)),
                 ("Compare insurance plans",       False, None),
                 ("File tax return",               True,  now - datetime.timedelta(days=10)),
             ]),
         ]
-
-        # Extra projects for workspaces 3 and 4 if they exist
-        if ws_count >= 4:
-            projects_spec += [
-                (ws(3), "Garden Project", [
-                    ("Buy seeds",                 False, now + datetime.timedelta(days=2)),
-                    ("Plant tomatoes",            False, now + datetime.timedelta(days=5)),
-                    ("Set up irrigation",         True,  now - datetime.timedelta(days=3)),
-                ]),
-            ]
-        if ws_count >= 5:
-            projects_spec += [
-                (ws(4), "Learning Goals", [
-                    ("Finish Django course",      False, now + datetime.timedelta(days=10)),
-                    ("Read Clean Code",           True,  now - datetime.timedelta(days=7)),
-                    ("Practice Spanish 30 min/day", False, None),
-                ]),
-            ]
 
         for target_ws, project_name, tasks in projects_spec:
             project = Project.objects.create(name=project_name, workspace=target_ws)
@@ -178,10 +160,11 @@ class Command(BaseCommand):
         events_spec = [
             (ws(0), "Yoga class",               now + datetime.timedelta(days=2),   now + datetime.timedelta(days=2, hours=1),          "Studio 4"),
             (ws(0), "Doctor check-up",          now + datetime.timedelta(days=5),   now + datetime.timedelta(days=5, hours=1),          "City Clinic"),
-            (ws(1), "Q2 Kickoff Meeting",       now + datetime.timedelta(days=1),   now + datetime.timedelta(days=1, hours=2),          "Conference Room B"),
-            (ws(1), "Product Demo",             now + datetime.timedelta(days=8),   now + datetime.timedelta(days=8, hours=1, minutes=30), "Online / Zoom"),
-            (ws(2), "Family BBQ",               now + datetime.timedelta(days=3),   now + datetime.timedelta(days=3, hours=4),          "Grandma's garden"),
-            (ws(2), "Parent-teacher meeting",   now + datetime.timedelta(days=6),   now + datetime.timedelta(days=6, hours=1),          "School hall"),
+            (ws(1), "Gardening workshop",       now + datetime.timedelta(days=4),   now + datetime.timedelta(days=4, hours=2),          "Community centre"),
+            (ws(2), "Q2 Kickoff Meeting",       now + datetime.timedelta(days=1),   now + datetime.timedelta(days=1, hours=2),          "Conference Room B"),
+            (ws(2), "Product Demo",             now + datetime.timedelta(days=8),   now + datetime.timedelta(days=8, hours=1, minutes=30), "Online / Zoom"),
+            (ws(3), "Family BBQ",               now + datetime.timedelta(days=3),   now + datetime.timedelta(days=3, hours=4),          "Grandma's garden"),
+            (ws(3), "Parent-teacher meeting",   now + datetime.timedelta(days=6),   now + datetime.timedelta(days=6, hours=1),          "School hall"),
         ]
         for target_ws, title, start, end, location in events_spec:
             Event.objects.create(workspace=target_ws, title=title,
@@ -190,8 +173,9 @@ class Command(BaseCommand):
         # ── Reminders ─────────────────────────────────────────────────────────
         reminders_spec = [
             (ws(0), "Take vitamins",                now + datetime.timedelta(hours=8)),
-            (ws(1), "Follow up with design team",   now + datetime.timedelta(days=1)),
-            (ws(2), "Buy birthday cake for Mum",    now + datetime.timedelta(days=2)),
+            (ws(1), "Water the plants",             now + datetime.timedelta(days=1)),
+            (ws(2), "Follow up with design team",   now + datetime.timedelta(days=1)),
+            (ws(3), "Buy birthday cake for Mum",    now + datetime.timedelta(days=2)),
         ]
         for target_ws, message, due in reminders_spec:
             first_task = Task.objects.filter(workspace=target_ws).first()
@@ -201,8 +185,9 @@ class Command(BaseCommand):
         # ── QuickNotes ────────────────────────────────────────────────────────
         notes_spec = [
             (ws(0), "Shopping list",   "list",  "Milk\nEggs\nBread\nButter\nOlive oil\nApples"),
-            (ws(1), "Meeting notes",   "plain", "Discussed Q2 roadmap. Key priorities: launch, onboarding, marketing push."),
-            (ws(2), "Vacation packing","list",  "Passports\nSunscreen\nSandals\nChargers\nFirst aid kit\nCamera"),
+            (ws(1), "Garden ideas",    "list",  "Tomatoes\nBasil\nSunflowers\nLavender"),
+            (ws(2), "Meeting notes",   "plain", "Discussed Q2 roadmap. Key priorities: launch, onboarding, marketing push."),
+            (ws(3), "Vacation packing","list",  "Passports\nSunscreen\nSandals\nChargers\nFirst aid kit\nCamera"),
         ]
         for target_ws, title, display_type, content in notes_spec:
             QuickNote.objects.create(user=demo_user, title=title,
