@@ -2,6 +2,9 @@
                         PLANNER - TASK MANAGEMENT SYSTEM
 ================================================================================
 
+LIVE DEMO: https://planner-anama.pythonanywhere.com
+  Click "Try Demo" on the login page — no account needed.
+
 PROJECT OVERVIEW
 ================================================================================
 Planner is a REST API-based task and workspace management application
