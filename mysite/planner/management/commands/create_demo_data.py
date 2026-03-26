@@ -94,12 +94,12 @@ class Command(BaseCommand):
             demo_workspaces.append(demo_ws)
             self.stdout.write(f"  Workspace: {demo_ws.name} ({demo_ws.type})")
 
-        # Fallback if owner had no workspaces
+        # Fallback if owner had no workspaces — use shared defaults with images
         if not demo_workspaces:
-            for name, ws_type in [("Health", "personal"), ("Personal", "personal"), ("Work", "work"), ("Family", "family")]:
-                ws = Workspace.objects.create(name=name, type=ws_type)
-                Membership.objects.create(workspace=ws, user=demo_user, role="admin")
-                demo_workspaces.append(ws)
+            from planner.workspace_defaults import create_default_workspaces
+            demo_workspaces = create_default_workspaces(demo_user, image_prefix="demo_")
+            for ws in demo_workspaces:
+                self.stdout.write(f"  Workspace: {ws.name} ({ws.type}) img={ws.image}")
 
         # ── Assign projects/tasks/events/notes across workspaces ────────────
         # ws(0)=Health, ws(1)=Personal, ws(2)=Work, ws(3)=Family

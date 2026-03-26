@@ -246,6 +246,9 @@ def signup(request):
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
+            # Create 4 default workspaces with images for the new user
+            from planner.workspace_defaults import create_default_workspaces
+            create_default_workspaces(user)
             login(request, user)
             messages.success(request, "Account created successfully.")
             return redirect(request.GET.get("next", "dashboard"))
