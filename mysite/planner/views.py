@@ -265,6 +265,12 @@ def dashboard(request):
     # Workspaces visible to current user
     workspaces = Workspace.objects.filter(membership__user=request.user).distinct()
 
+    # Auto-create default workspaces on first visit (handles superusers, etc.)
+    if not workspaces.exists() and request.user.username != DEMO_USERNAME:
+        from planner.workspace_defaults import create_default_workspaces
+        create_default_workspaces(request.user)
+        workspaces = Workspace.objects.filter(membership__user=request.user).distinct()
+
     selected_date = parse_date(request.GET.get("date", "")) or timezone.localdate()
     tasks_due_today = (
         Task.objects.filter(
