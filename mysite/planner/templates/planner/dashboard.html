@@ -9,6 +9,63 @@
     <i class="bi bi-speedometer2"></i> Dashboard
 </h2>
 
+{% if not is_demo %}
+<section class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0 text-muted d-flex align-items-center gap-1">
+            <i class="bi bi-plus-square"></i> Quick Add
+        </h5>
+    </div>
+    <div class="row g-3">
+        <div class="col-6 col-md-4 col-xl">
+            <a href="{% url 'workspace_create' %}" class="card border-0 shadow-sm rounded-4 text-decoration-none h-100 quick-add-card">
+                <div class="card-body">
+                    <div class="quick-add-icon bg-primary-subtle text-primary"><i class="bi bi-diagram-3"></i></div>
+                    <h6 class="mt-3 mb-1 text-dark">Workspace</h6>
+                    <p class="mb-0 small text-muted">Create a new workspace.</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-xl">
+            <a href="{% url 'task_create' %}" class="card border-0 shadow-sm rounded-4 text-decoration-none h-100 quick-add-card">
+                <div class="card-body">
+                    <div class="quick-add-icon bg-success-subtle text-success"><i class="bi bi-check2-square"></i></div>
+                    <h6 class="mt-3 mb-1 text-dark">Task</h6>
+                    <p class="mb-0 small text-muted">Jump straight into a task form.</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-xl">
+            <a href="{% url 'event_create' %}" class="card border-0 shadow-sm rounded-4 text-decoration-none h-100 quick-add-card">
+                <div class="card-body">
+                    <div class="quick-add-icon bg-warning-subtle text-warning"><i class="bi bi-calendar-event"></i></div>
+                    <h6 class="mt-3 mb-1 text-dark">Event</h6>
+                    <p class="mb-0 small text-muted">Schedule a new event.</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-xl">
+            <a href="{% url 'reminder_create' %}" class="card border-0 shadow-sm rounded-4 text-decoration-none h-100 quick-add-card">
+                <div class="card-body">
+                    <div class="quick-add-icon bg-danger-subtle text-danger"><i class="bi bi-bell"></i></div>
+                    <h6 class="mt-3 mb-1 text-dark">Reminder</h6>
+                    <p class="mb-0 small text-muted">Create a reminder from one place.</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-xl">
+            <a href="{% url 'quicknote_create' %}" class="card border-0 shadow-sm rounded-4 text-decoration-none h-100 quick-add-card">
+                <div class="card-body">
+                    <div class="quick-add-icon bg-info-subtle text-info"><i class="bi bi-journal-text"></i></div>
+                    <h6 class="mt-3 mb-1 text-dark">Memo</h6>
+                    <p class="mb-0 small text-muted">Capture a note quickly.</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
 <div class="row g-4">
 
     <!-- LEFT: Workspaces (2/3) -->
@@ -145,6 +202,25 @@
         box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
         transform: translateY(-2px);
         transition: all 0.2s ease-in-out;
+    }
+
+    .quick-add-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .quick-add-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    }
+
+    .quick-add-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
     }
 
     /* Task done styling */

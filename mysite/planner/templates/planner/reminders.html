@@ -1,0 +1,64 @@
+{% extends "planner/base.html" %}
+
+{% block title %}Reminders{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Reminders</h2>
+    <a href="{% url 'reminder_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> New Reminder
+    </a>
+</div>
+
+{% if reminders %}
+<div class="row g-3">
+    {% for reminder in reminders %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body d-flex justify-content-between align-items-start gap-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                        <h6 class="mb-0">{{ reminder.message|default:"Untitled reminder" }}</h6>
+                        {% if reminder.is_resolved %}
+                        <span class="badge text-bg-success">Resolved</span>
+                        {% else %}
+                        <span class="badge text-bg-warning">Open</span>
+                        {% endif %}
+                    </div>
+
+                    {% if reminder.task %}
+                    <div class="small text-muted">
+                        Task: {{ reminder.task.workspace.name }} / {% if reminder.task.project %}{{ reminder.task.project.name }} / {% endif %}{{ reminder.task.title }}
+                    </div>
+                    {% endif %}
+
+                    {% if reminder.due_datetime %}
+                    <div class="small text-muted">
+                        Due: {{ reminder.due_datetime|date:"M d, Y H:i" }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex gap-2">
+                    {% if not reminder.is_resolved %}
+                    <form method="post" action="{% url 'reminder_resolve' reminder.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-success">Resolve</button>
+                    </form>
+                    {% endif %}
+                    <a href="{% url 'reminder_update' reminder.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body text-muted d-flex justify-content-between align-items-center">
+        <span>No reminders yet.</span>
+        <a href="{% url 'reminder_create' %}" class="btn btn-sm btn-outline-primary">Create one</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

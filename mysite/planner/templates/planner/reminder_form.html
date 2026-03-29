@@ -1,0 +1,21 @@
+{% extends "planner/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if is_create_mode %}Create Reminder{% else %}Edit Reminder{% endif %}{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">{% if is_create_mode %}Create Reminder{% else %}Edit Reminder{% endif %}</h2>
+
+<div class="card shadow-sm rounded-4 p-3 mb-4">
+    <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <div class="d-flex gap-2 mt-2">
+            <button type="submit" class="btn btn-success">
+                {% if is_create_mode %}Create{% else %}Save{% endif %}
+            </button>
+            <a href="{% url 'reminder_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

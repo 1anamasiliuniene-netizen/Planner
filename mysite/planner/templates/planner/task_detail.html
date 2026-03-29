@@ -36,7 +36,7 @@
                 {% csrf_token %}
                 {{ task_form|crispy }}
                 <div class="d-flex gap-2 mt-2 flex-wrap">
-                    <button type="submit" class="btn btn-primary btn-sm">
+                    <button type="submit" name="task_submit" class="btn btn-primary btn-sm">
                         {% if is_create_mode %}Create{% else %}Save{% endif %}
                     </button>
                     <a href="{% url 'task_list' %}" class="btn btn-secondary btn-sm">Cancel</a>

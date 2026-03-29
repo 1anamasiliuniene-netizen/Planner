@@ -67,6 +67,9 @@ class Task(WorkspaceModel):
     is_completed = models.BooleanField(default=False)
     shared_with = models.ManyToManyField(User, blank=True, related_name="shared_tasks")
 
+    def __str__(self):
+        return self.title
+
 class Event(WorkspaceModel):
     title = models.CharField(max_length=200)
     start_time = models.DateTimeField()

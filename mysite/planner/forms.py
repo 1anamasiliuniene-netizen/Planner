@@ -133,10 +133,27 @@ class ReminderForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
+        if user:
+            self.fields["task"].queryset = Task.objects.filter(
+                workspace__membership__user=user
+            ).select_related("workspace", "project").distinct().order_by(
+                "workspace__name", "project__name", "title"
+            )
+            self.fields["task"].label_from_instance = self._task_label
         # Make sure the datetime value is in the correct format for the input
         if self.instance and self.instance.due_datetime:
             self.initial["due_datetime"] = self.instance.due_datetime.strftime("%Y-%m-%dT%H:%M")
+
+    @staticmethod
+    def _task_label(task):
+        project_name = task.project.name if task.project else "No project"
+        due_text = (
+            task.due_datetime.strftime("%b %d, %H:%M")
+            if task.due_datetime else "No due date"
+        )
+        return f"{task.workspace.name} / {project_name} / {task.title} ({due_text})"
 
 # -----------------------
 # Profile Form (Crispy + Bootstrap 5)

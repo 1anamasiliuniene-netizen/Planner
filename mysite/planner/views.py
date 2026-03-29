@@ -819,7 +819,7 @@ def event_create(request):
             return redirect("event_list")
     else:
         form = EventForm(user=request.user)
-    return render(request, "planner/event_form.html", {"form": form})
+    return render(request, "planner/event_form.html", {"form": form, "is_create_mode": True})
 
 
 @login_required
@@ -839,7 +839,7 @@ def event_update(request, pk):
         )
         messages.success(request, "Event updated.")
         return redirect('event_list')
-    return render(request, 'planner/event_form.html', {'form': form, 'event': event})
+    return render(request, 'planner/event_form.html', {'form': form, 'event': event, 'is_create_mode': False})
 
 
 @login_required
@@ -865,7 +865,7 @@ def reminder_list(request):
 @login_required
 def reminder_create(request):
     if request.method == "POST":
-        form = ReminderForm(request.POST)
+        form = ReminderForm(request.POST, user=request.user)
         if form.is_valid():
             task = form.cleaned_data.get("task")
             if task and not user_in_workspace(task.workspace, request.user):
@@ -875,8 +875,8 @@ def reminder_create(request):
             messages.success(request, "Reminder created.")
             return redirect("reminder_list")
     else:
-        form = ReminderForm()
-    return render(request, "planner/reminder_form.html", {"form": form})
+        form = ReminderForm(user=request.user)
+    return render(request, "planner/reminder_form.html", {"form": form, "is_create_mode": True})
 
 
 @login_required
@@ -886,14 +886,14 @@ def reminder_update(request, pk):
         messages.error(request, "Access denied.")
         return redirect("reminder_list")
     if request.method == "POST":
-        form = ReminderForm(request.POST, instance=reminder)
+        form = ReminderForm(request.POST, instance=reminder, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Reminder updated.")
             return redirect("reminder_list")
     else:
-        form = ReminderForm(instance=reminder)
-    return render(request, "planner/reminder_form.html", {"form": form})
+        form = ReminderForm(instance=reminder, user=request.user)
+    return render(request, "planner/reminder_form.html", {"form": form, "is_create_mode": False, "reminder": reminder})
 
 
 @login_required
