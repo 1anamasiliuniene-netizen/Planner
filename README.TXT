@@ -1,91 +1,56 @@
-================================================================================
-                        PLANNER - TASK MANAGEMENT SYSTEM
-================================================================================
+
+PLANNER 
+
+REST API-based collaborative workspace and task management system
 
 LIVE DEMO: https://planner-anama.pythonanywhere.com
   Click "Try Demo" on the login page — no account needed.
 
-PROJECT OVERVIEW
-================================================================================
-Planner is a REST API-based task and workspace management application
-built with Django and Django REST Framework (DRF). It provides a complete
-API for managing workspaces, projects, tasks, reminders, events, notes,
-and supporting multi-user collaboration.
+Planner is a multi-user productivity and collaboration platform built with Django and Django REST Framework.
 
-The application is a backend API service providing 50+ endpoints with
-OpenAPI 3.0 documentation, Swagger UI, and ReDoc.
+The project focuses on organizing complex workflows through workspace-based collaboration, task management, reminders, events, and role-based access systems.
 
-Tech Stack:
-- Backend: Django 6.0.3, Python 3.14.2
-- Database: SQLite3
-- API: Django REST Framework with drf_spectacular
-- Documentation: OpenAPI 3.0 / Swagger UI & ReDoc
-- Authentication: Session-based with DRF
+The application was designed as an API-first product with structured information architecture and scalable collaboration logic.
 
-================================================================================
-KEY FEATURES
-================================================================================
+Key UX/Product Areas:
 
-1. WORKSPACES
-   - Create personal, work, or family workspaces
-   - Add custom images to workspaces
-   - Invite users and assign roles (admin/member)
-   - View workspace membership
-   - Share workspaces with other users
+* Workspace-centered collaboration model
+* Role-based permissions and shared environments
+* Task prioritization and workflow organization
+* Reminder and notification systems
+* Calendar/event management
+* Global search and filtering
+* Dashboard hierarchy and quick-access navigation
+* Real-time visibility of tasks, reminders, and events
+* Multi-user coordination across personal, work, and family contexts
 
-2. PROJECTS
-   - Organize tasks within projects
-   - Archive completed projects
-   - View project members
-   - Restore archived projects
+Core Features:
 
-3. TASKS
-   - Create tasks with titles and descriptions
-   - Set due dates and priorities
-   - Mark tasks as complete/incomplete
-   - Share tasks with other users
-   - Attach notes to tasks
-   - View overdue tasks
-   - Filter by status, priority, workspace
+* Workspaces with member/admin roles
+* Projects and archived project recovery
+* Tasks with priorities, due dates, and completion tracking
+* Shared tasks and notes
+* Calendar event management
+* Reminder resolution workflows
+* Quick notes/memos with visibility tracking
+* Authentication and password reset flow
+* Demo access for usability testing
 
-4. EVENTS
-   - Create calendar events with start/end times
-   - Add location and notes to events
-   - Track event visibility (EventSeen)
-   - View events by workspace
-   - Sort and filter events
+Technical Stack:
 
-5. REMINDERS
-   - Set reminders for tasks and events
-   - Combine date and time for precise reminders
-   - Mark reminders as resolved
-   - View unresolved reminders
-   - Sort reminders by due date
+* Python
+* Django 6
+* Django REST Framework
+* OpenAPI 3.0
+* Swagger UI / ReDoc
+* SQLite
+* drf-spectacular
 
-6. QUICK NOTES (Memos)
-   - Create quick notes with optional images
-   - Support for plain text or bulleted list display
-   - Share notes with specific workspaces
-   - Auto-timestamping (created_at, updated_at)
-   - Track note visibility (QuickNoteSeen)
+This project helped me deepen practical understanding of:
 
-7. AUTHENTICATION & AUTHORIZATION
-   - User registration and login
-   - Password reset functionality
-   - Role-based access control (member/admin)
-   - Demo account with read-only access
-   - Session-based authentication
-   - API token support via REST framework
-
-8. SEARCH FUNCTIONALITY
-   - Global search across projects, tasks, and more
-   - Filter by workspace and status
-
-9. CALENDAR VIEW
-   - Visual calendar interface
-   - Event scheduling and management
-
-10. DASHBOARD
-    - Central hub showing workspaces, tasks, and events
-    - Quick access to all features
-    - Real-time reminders in navbar
+* collaborative product systems
+* workflow-oriented UX
+* scalable information architecture
+* dashboard and navigation structure
+* API-first product thinking
+* user roles and permission-based experience design
